@@ -13,7 +13,7 @@ internal static class Program
 
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
-        ProgramsClass.AddPrograms(ProgramsClass.GetInstalledProgramSubkeys());
+        ProgramsClass.AddPrograms(ProgramsClass.KeyStuff.GetInstalledProgramSubkeys());
         Console.WriteLine(string.Join(Environment.NewLine,ProgramsClass.instances));
         
     }

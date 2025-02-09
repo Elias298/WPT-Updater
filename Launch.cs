@@ -6,6 +6,18 @@ using System.Threading.Tasks;
 
 namespace WPT_Updater;
 
-internal class FirstLaunch
+internal class Launch
 {
+
+    public class FirstLaunch
+    {
+
+
+    }
+
+    public class AnyLaunch
+    {
+
+
+    }
 }

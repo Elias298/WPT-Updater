@@ -19,7 +19,6 @@ internal class ProgramsClass
     public string? ProgramName { get; set; }          
     public string? InstalledVersion { get; set; } 
     public string? InstallDate { get; set; }        
-    public string? IconPath { get; set; }
     public bool Hidden = false;
     public bool authentication = false;
 
@@ -88,10 +87,27 @@ internal class ProgramsClass
     }
 
 
+    //method to add programs from a given keylist
+    public static void AddPrograms(List<string> keyslist)
+    {
+        foreach (string key in keyslist)
+        {
+            GetProgramInfo(key);
+        }
+    }
 
 
 
 
+
+
+
+
+
+}
+
+public class KeyStuff
+{
 
     // Method to get all subkey names from the registry
     public static List<string> GetInstalledProgramSubkeys()
@@ -118,23 +134,5 @@ internal class ProgramsClass
 
         return subkeys;
     }
-
-
-    //method to add programs from a given keylist
-    public static void AddPrograms(List<string> keyslist)
-    {
-        foreach (string key in keyslist)
-        {
-            GetProgramInfo(key);
-        }
-    }
-
-
-
-
-
-
-
-
 
 }
