@@ -29,9 +29,9 @@
         private void InitializeComponent()
         {
             tabControl1 = new TabControl();
-            tabPage1 = new TabPage();
             tabPage2 = new TabPage();
             tabPage3 = new TabPage();
+            tabPage1 = new TabPage();
             tabControl1.SuspendLayout();
             SuspendLayout();
             // 
@@ -49,17 +49,6 @@
             tabControl1.Size = new Size(800, 450);
             tabControl1.TabIndex = 0;
             // 
-            // tabPage1
-            // 
-            tabPage1.Location = new Point(4, 32);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(792, 414);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "Installed";
-            tabPage1.UseVisualStyleBackColor = true;
-            tabPage1.Click += tabPage1_Click;
-            // 
             // tabPage2
             // 
             tabPage2.Location = new Point(4, 32);
@@ -76,10 +65,21 @@
             tabPage3.Location = new Point(4, 32);
             tabPage3.Name = "tabPage3";
             tabPage3.Padding = new Padding(3);
-            tabPage3.Size = new Size(792, 414);
+            tabPage3.Size = new Size(792, 390);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "Betas";
             tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Location = new Point(4, 32);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(792, 390);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Installed";
+            tabPage1.UseVisualStyleBackColor = true;
+            tabPage1.Click += tabPage1_Click;
             // 
             // Form1
             // 
