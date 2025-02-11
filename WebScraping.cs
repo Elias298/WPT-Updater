@@ -1,21 +1,9 @@
 using System;
-using System.Collections.Generic;
 
 namespace WPT_Updater
 {
     internal static class WebScraping
     {
-        private static readonly Dictionary<string, string> appWebsites = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Facebook", "https://www.facebook.com" },
-            { "Twitter", "https://www.twitter.com" },
-            { "Instagram", "https://www.instagram.com" },
-            { "LinkedIn", "https://www.linkedin.com" },
-            { "Snapchat", "https://www.snapchat.com" },
-            { "WhatsApp", "https://www.whatsapp.com" },
-            { "TikTok", "https://www.tiktok.com" }
-        };
-
         public static string GetAppWebsite(string appName)
         {
             if (string.IsNullOrWhiteSpace(appName))
@@ -23,17 +11,7 @@ namespace WPT_Updater
                 throw new ArgumentException("App name cannot be empty.");
             }
 
-            if (!appWebsites.TryGetValue(appName, out string website))
-            {
-                throw new KeyNotFoundException($"Website for '{appName}' not found.");
-            }
-
-            if (!website.StartsWith("https://"))
-            {
-                throw new InvalidOperationException("Invalid website: does not use HTTPS.");
-            }
-
-            return website;
+            return $"https://www.{appName.ToLower()}.com";
         }
     }
 
@@ -56,3 +34,4 @@ namespace WPT_Updater
         }
     }
 }
+
