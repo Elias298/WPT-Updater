@@ -18,9 +18,7 @@ internal class ProgramsClass
     public string? ProgramKey { get; set; }
     public string? ProgramName { get; set; }          
     public string? InstalledVersion { get; set; } 
-    public string? InstallDate { get; set; }        
-    public bool Hidden = false;
-    public bool authentication = false;
+    public string? InstallDate { get; set; }
 
     //require web search attributes
     public string? LatestVersion { get; set; }
@@ -29,8 +27,17 @@ internal class ProgramsClass
     public string? DownloadPage {get; set;}
     public string? DownloadLink {get; set;}
 
+    //authentication attributes
+    public string? _username { get; set;}
+    public string? _password {  get; set;}
+
+    //hidden attribute
+    public int? hidden {  get; set;}
+    
+
     public static List<ProgramsClass> instances = [];
-    public static List<String>? AddedSubkeys = ["0"];
+    public static List<String>? AddedSubkeys = [];
+    public static AppData.DatabaseHelper dbhelper = new AppData.DatabaseHelper();
 
 
     // Override ToString for easy debugging
@@ -54,12 +61,8 @@ internal class ProgramsClass
             installDateString = "--------";
         }
         
-        /*Updates already added programs,    to be implemented later
-        if (AddedSubkeys.Contains(subkeyPath))
-        {
-
-        }
-        */
+        
+        
 
 
         // Only add programs with a valid name
@@ -68,10 +71,11 @@ internal class ProgramsClass
         {
             var program = new ProgramsClass()
             {
-
+                ProgramKey = subkeyPath,
                 ProgramName = programName,
                 InstalledVersion = installedVersion,
-                InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8]
+                InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8],
+                hidden = 0
                 //LatestVersion = WebScraping.GetVersion(programName),
                 //OfficialPage = WebScraping.GetOfficialPage(programName),
                 //VersionPage = WebScraping.GetVersionPage(programName),
@@ -80,6 +84,7 @@ internal class ProgramsClass
 
 
             };
+            dbhelper.SyncNewProgram(program);
             AddedSubkeys?.Add(subkeyPath);
             instances.Add(program);
         }

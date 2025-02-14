@@ -1,3 +1,6 @@
+using System.Data.SQLite;
+using System.Threading.Tasks.Sources;
+
 namespace WPT_Updater;
 
 internal static class Program
@@ -13,8 +16,14 @@ internal static class Program
 
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
-        ProgramsClass.AddPrograms(ProgramsClass.KeyStuff.GetInstalledProgramSubkeys());
-        Console.WriteLine(string.Join(Environment.NewLine,ProgramsClass.instances));
+
         
+        //Console.WriteLine(string.Join(Environment.NewLine,ProgramsClass.instances));
+        AppData.DatabaseHelper nigger = new AppData.DatabaseHelper();
+        nigger.InitializeDatabase();
+        ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
+        Console.WriteLine("Done!");
+
+
     }
 }
