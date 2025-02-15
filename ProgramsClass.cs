@@ -37,7 +37,7 @@ internal class ProgramsClass
 
     public static List<ProgramsClass> instances = [];
     public static List<String>? AddedSubkeys = [];
-    public static AppData.DatabaseHelper dbhelper = new AppData.DatabaseHelper();
+    public static AppData dbhelper = new AppData();
 
 
     // Override ToString for easy debugging

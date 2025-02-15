@@ -19,8 +19,7 @@ internal static class Program
 
         
         //Console.WriteLine(string.Join(Environment.NewLine,ProgramsClass.instances));
-        AppData.DatabaseHelper nigger = new AppData.DatabaseHelper();
-        nigger.InitializeDatabase();
+        AppData.InitializeDatabase();
         ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
         Console.WriteLine("Done!");
 
