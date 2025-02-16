@@ -1,3 +1,4 @@
+using System;
 using System.Data.SQLite;
 using System.Threading.Tasks.Sources;
 
@@ -17,10 +18,19 @@ internal static class Program
         //ApplicationConfiguration.Initialize();
         //Application.Run(new Form1());
 
-        
-        //Console.WriteLine(string.Join(Environment.NewLine,ProgramsClass.instances));
-        AppData.InitializeDatabase();
-        ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
+        //AppData.InitializeDatabase();
+        //ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
+
+
+        string key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Notepad++";
+        ProgramsClass program = ProgramsClass.ProgramsDict[key];
+        program.EditProgramInfo(programName : "nigger");
+
+
+        /*foreach (var program in ProgramsClass.ProgramsDict)
+        {
+            Console.WriteLine(program.Value);
+        }*/
         Console.WriteLine("Done!");
 
 

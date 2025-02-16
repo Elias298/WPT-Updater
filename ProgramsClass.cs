@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.IO;
+using System.Xml.Linq;
+using System.Diagnostics.Eventing.Reader;
 
 namespace WPT_Updater;
 
@@ -15,7 +17,7 @@ internal class ProgramsClass
 
     //local attributes
 
-    public string? ProgramKey { get; set; }
+    public required string ProgramKey { get; set; }
     public string? ProgramName { get; set; }          
     public string? InstalledVersion { get; set; } 
     public string? InstallDate { get; set; }
@@ -31,13 +33,11 @@ internal class ProgramsClass
     public string? _username { get; set;}
     public string? _password {  get; set;}
 
-    //hidden attribute
-    public int? hidden {  get; set;}
-    
+    //bool attribute
+    public int? Hidden {  get; set;}
 
-    public static List<ProgramsClass> instances = [];
-    public static List<String>? AddedSubkeys = [];
     public static AppData dbhelper = new AppData();
+    public static Dictionary<string, ProgramsClass> ProgramsDict = dbhelper.GetAllPrograms();
 
 
     // Override ToString for easy debugging
@@ -60,13 +60,6 @@ internal class ProgramsClass
         {
             installDateString = "--------";
         }
-        
-        
-        
-
-
-        // Only add programs with a valid name
-
         if (!string.IsNullOrEmpty(programName))//"if" will later become an "else"
         {
             var program = new ProgramsClass()
@@ -75,19 +68,41 @@ internal class ProgramsClass
                 ProgramName = programName,
                 InstalledVersion = installedVersion,
                 InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8],
-                hidden = 0
+                Hidden = 0
                 //LatestVersion = WebScraping.GetVersion(programName),
                 //OfficialPage = WebScraping.GetOfficialPage(programName),
                 //VersionPage = WebScraping.GetVersionPage(programName),
                 //DownloadPage = WebScraping.GetDownloadPage(programName),
                 //DownloadLink = WebScraping.GetDownloadLink(programName)
-
-
             };
             dbhelper.SyncNewProgram(program);
-            AddedSubkeys?.Add(subkeyPath);
-            instances.Add(program);
+            ProgramsDict.Add(subkeyPath, program);
         }
+    }
+
+    //method to update an added program
+    public void EditProgramInfo(
+                              string? programName=null,
+                              string? installedVersion=null,
+                              string? installDate=null,
+                              string? latestVersion=null,
+                              string? officialPage=null,
+                              string? versionPage = null,
+                              string? downloadPage = null,
+                              string? downloadLink = null,
+                              int? hidden = null)
+    {
+        if (programName != null) { ProgramName = programName; }
+        if (installedVersion != null) { InstalledVersion = installedVersion; }
+        if (installDate != null) { InstallDate = installDate; }
+        if (latestVersion != null) { LatestVersion = latestVersion; }
+        if (officialPage != null) { OfficialPage = officialPage; }
+        if (versionPage != null) { VersionPage = versionPage; }
+        if (downloadPage != null) { DownloadPage = downloadPage; }
+        if (downloadLink != null) { DownloadLink = downloadLink; }
+        if (hidden != null) { Hidden = hidden; }
+
+        dbhelper.SyncEditedInfo(ProgramKey);
 
     }
 

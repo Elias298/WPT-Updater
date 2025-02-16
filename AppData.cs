@@ -12,6 +12,7 @@ namespace WPT_Updater;
 internal class AppData{
 
     private readonly string connectionString = "Data Source=Programs.db";
+    string selectQuery = "SELECT * FROM Programs;";
     public readonly string insertQuery = @"
             INSERT INTO Programs (
                 ProgramKey,
@@ -25,7 +26,7 @@ internal class AppData{
                 DownloadLink,
                 _username,
                 _password,
-                hidden
+                Hidden
             )
             VALUES (
                 @ProgramKey,
@@ -39,7 +40,7 @@ internal class AppData{
                 @DownloadLink,
                 @_username,
                 @_password,
-                @hidden
+                @Hidden
             );";
 
     public readonly string UpdateQuery = @"
@@ -55,7 +56,7 @@ internal class AppData{
                     DownloadLink = @DownloadLink,
                     _username = @_username,
                     _password = @_password,
-                    hidden = @hidden
+                    Hidden = @Hidden
                 WHERE
                     ProgramKey = @ProgramKey;";
 
@@ -80,7 +81,7 @@ internal class AppData{
                             DownloadLink TEXT,
                             _username TEXT,
                             _password TEXT,
-                            hidden INT
+                            Hidden INT
                         )");
         }
     }
@@ -97,8 +98,9 @@ internal class AppData{
 
     }
 
-    public void SyncProgramUpdate(ProgramsClass program)
+    public void SyncEditedInfo(string ProgramKey)
     {
+        ProgramsClass program =ProgramsClass.ProgramsDict[ProgramKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
             connection.Open();
@@ -106,45 +108,21 @@ internal class AppData{
         }
     }
 
-    // Insert or update a program in the database
-            /*public void SyncProgram(ProgramsClass program)
-            {
-                using (var connection = new SQLiteConnection(connectionString))
-                {
-                    connection.Open();
-                    var existingProgram = connection.QueryFirstOrDefault<ProgramsClass>(
-                        "SELECT * FROM Programs WHERE ProgramName = @ProgramName",
-                        new { program.ProgramName });
-
-                    if (existingProgram == null)
-                    {
-                        // Insert new program
-                        connection.Execute(
-                            "INSERT INTO Programs (ProgramName, ProgramVersion, LatestVersion, InstallDate) " +
-                            "VALUES (@ProgramName, @ProgramVersion, @LatestVersion, @InstallDate)",
-                            program);
-                    }
-                    else
-                    {
-                        // Update existing program
-                        connection.Execute(
-                            "UPDATE Programs SET ProgramVersion = @ProgramVersion, LatestVersion = @LatestVersion, " +
-                            "InstallDate = @InstallDate WHERE ProgramName = @ProgramName",
-                            program);
-                    }
-                }
-            }*/
-
-
-            // Get all programs from the database
-    public IEnumerable<ProgramsClass> GetAllPrograms()
+    // Retrieve all programs from the database
+    public Dictionary<string, ProgramsClass> GetAllPrograms()
     {
         using (var connection = new SQLiteConnection(connectionString))
         {
             connection.Open();
-            return connection.Query<ProgramsClass>("SELECT * FROM Programs");
+            // Execute the query and map the results to a list of ProgramsClass objects
+            var programsDictionary = connection
+                .Query<ProgramsClass>(selectQuery)
+                .ToDictionary(p => p.ProgramKey);
+            return programsDictionary!;
         }
     }
+
+
     
     
 
