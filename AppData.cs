@@ -9,7 +9,8 @@ using Dapper;
 using static System.Net.Mime.MediaTypeNames;
 namespace WPT_Updater;
 
-internal class AppData{
+internal class AppData
+{
 
     private readonly string connectionString = "Data Source=Programs.db";
     string selectQuery = "SELECT * FROM Programs;";
@@ -60,6 +61,11 @@ internal class AppData{
                 WHERE
                     ProgramKey = @ProgramKey;";
 
+    public readonly string DeleteQuery = @"
+                DELETE FROM Programs
+                WHERE ProgramKey = @ProgramKey;";
+
+
 
 
     // Initialize the database (create table if it doesn't exist)
@@ -98,13 +104,27 @@ internal class AppData{
 
     }
 
+
+    //Edit program info
     public void SyncEditedInfo(string ProgramKey)
     {
-        ProgramsClass program =ProgramsClass.ProgramsDict[ProgramKey];
+        ProgramsClass program = ProgramsClass.ProgramsDict[ProgramKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
             connection.Open();
             connection.Execute(UpdateQuery, program);
+        }
+    }
+
+
+    //Remove a program
+    public void SyncRemoveProgram(string programKey)
+    {
+        ProgramsClass program = ProgramsClass.ProgramsDict[ProgramKey];
+        using (var connection = new SQLiteConnection(connectionString))
+        {
+            connection.Open();
+            connection.Execute(DeleteQuery, program);
         }
     }
 
@@ -123,7 +143,7 @@ internal class AppData{
     }
 
 
-    
-    
+
+
 
 }

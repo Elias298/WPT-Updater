@@ -24,7 +24,7 @@ internal static class Program
 
         string key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Notepad++";
         ProgramsClass program = ProgramsClass.ProgramsDict[key];
-        program.EditProgramInfo(programName : "niggers");
+        program.EditProgramInfo(programName : "Ralph");
 
 
         /*foreach (var program in ProgramsClass.ProgramsDict)

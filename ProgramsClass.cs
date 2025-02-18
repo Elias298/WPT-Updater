@@ -18,23 +18,23 @@ internal class ProgramsClass
     //local attributes
 
     public required string ProgramKey { get; set; }
-    public string? ProgramName { get; set; }          
-    public string? InstalledVersion { get; set; } 
+    public string? ProgramName { get; set; }
+    public string? InstalledVersion { get; set; }
     public string? InstallDate { get; set; }
 
     //require web search attributes
     public string? LatestVersion { get; set; }
-    public string? OfficialPage {get; set;}
-    public string? VersionPage {get; set;}
-    public string? DownloadPage {get; set;}
-    public string? DownloadLink {get; set;}
+    public string? OfficialPage { get; set; }
+    public string? VersionPage { get; set; }
+    public string? DownloadPage { get; set; }
+    public string? DownloadLink { get; set; }
 
     //authentication attributes
-    public string? _username { get; set;}
-    public string? _password {  get; set;}
+    public string? _username { get; set; }
+    public string? _password { get; set; }
 
     //bool attribute
-    public int? Hidden {  get; set;}
+    public int? Hidden { get; set; }
 
     public static AppData dbhelper = new AppData();
     public static Dictionary<string, ProgramsClass> ProgramsDict = dbhelper.GetAllPrograms();
@@ -75,18 +75,19 @@ internal class ProgramsClass
                 //DownloadPage = WebScraping.GetDownloadPage(programName),
                 //DownloadLink = WebScraping.GetDownloadLink(programName)
             };
-            dbhelper.SyncNewProgram(program);
             ProgramsDict.Add(subkeyPath, program);
+            dbhelper.SyncNewProgram(program);
+            //sync with UI
         }
     }
 
     //method to update an added program
     public void EditProgramInfo(
-                              string? programName=null,
-                              string? installedVersion=null,
-                              string? installDate=null,
-                              string? latestVersion=null,
-                              string? officialPage=null,
+                              string? programName = null,
+                              string? installedVersion = null,
+                              string? installDate = null,
+                              string? latestVersion = null,
+                              string? officialPage = null,
                               string? versionPage = null,
                               string? downloadPage = null,
                               string? downloadLink = null,
@@ -103,7 +104,16 @@ internal class ProgramsClass
         if (hidden != null) { Hidden = hidden; }
 
         dbhelper.SyncEditedInfo(ProgramKey);
+        //sync with UI
 
+    }
+
+
+    public void RemoveProgram(string programKey)
+    {
+        ProgramsDict.Remove(programKey);
+        dbhelper.SyncRemoveProgram(programKey);
+        //sync with UI
     }
 
 
