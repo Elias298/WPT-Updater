@@ -109,10 +109,10 @@ internal class ProgramsClass
     }
 
 
-    public void RemoveProgram(string programKey)
+    public void RemoveProgram()
     {
-        ProgramsDict.Remove(programKey);
-        dbhelper.SyncRemoveProgram(programKey);
+        dbhelper.SyncRemoveProgram(ProgramKey);
+        ProgramsDict.Remove(ProgramKey);
         //sync with UI
     }
 

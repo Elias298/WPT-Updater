@@ -120,7 +120,7 @@ internal class AppData
     //Remove a program
     public void SyncRemoveProgram(string programKey)
     {
-        ProgramsClass program = ProgramsClass.ProgramsDict[ProgramKey];
+        ProgramsClass program = ProgramsClass.ProgramsDict[programKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
             connection.Open();
