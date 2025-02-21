@@ -13,7 +13,7 @@ internal class AppData
 {
 
     private readonly string connectionString = "Data Source=Programs.db";
-    string selectQuery = "SELECT * FROM Programs;";
+    public readonly string selectQuery = "SELECT * FROM Programs;";
     public readonly string insertQuery = @"
             INSERT INTO Programs (
                 ProgramKey,
@@ -73,8 +73,7 @@ internal class AppData
     {
         using (var connection = new SQLiteConnection("Data Source=Programs.db"))
         {
-            connection.Open();
-            connection.Execute(@"
+            connection.ExecuteAsync(@"
                         CREATE TABLE Programs (
                             ProgramKey TEXT PRIMARY KEY,
                             ProgramName TEXT ,
@@ -93,38 +92,34 @@ internal class AppData
     }
 
     //Add a program in the databse
-    public void SyncNewProgram(ProgramsClass program)
+    public async Task SyncNewProgram(ProgramsClass program)
     {
         using (var connection = new SQLiteConnection(connectionString))
         {
-
-            connection.Open();
-            connection.Execute(insertQuery, program);
+            await connection.ExecuteAsync(insertQuery, program);
         }
 
     }
 
 
     //Edit program info
-    public void SyncEditedInfo(string ProgramKey)
+    public async Task SyncEditedInfo(string ProgramKey)
     {
         ProgramsClass program = ProgramsClass.ProgramsDict[ProgramKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
-            connection.Open();
-            connection.Execute(UpdateQuery, program);
+            await connection.ExecuteAsync(UpdateQuery, program);
         }
     }
 
 
     //Remove a program
-    public void SyncRemoveProgram(string programKey)
+    public async Task SyncRemoveProgram(string programKey)
     {
         ProgramsClass program = ProgramsClass.ProgramsDict[programKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
-            connection.Open();
-            connection.Execute(DeleteQuery, program);
+            await connection.ExecuteAsync(DeleteQuery, program);
         }
     }
 

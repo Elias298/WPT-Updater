@@ -48,7 +48,7 @@ internal class ProgramsClass
 
 
     //method to add 1 program given it's subkey
-    public static void GetProgramInfo(string subkeyPath)
+    public static async Task GetProgramInfo(string subkeyPath)
     {
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
 
@@ -60,7 +60,7 @@ internal class ProgramsClass
         {
             installDateString = "--------";
         }
-        if (!string.IsNullOrEmpty(programName))//"if" will later become an "else"
+        if (!string.IsNullOrEmpty(programName))
         {
             var program = new ProgramsClass()
             {
@@ -76,13 +76,14 @@ internal class ProgramsClass
                 //DownloadLink = WebScraping.GetDownloadLink(programName)
             };
             ProgramsDict.Add(subkeyPath, program);
-            dbhelper.SyncNewProgram(program);
+            Console.WriteLine("1 program added");
+            await dbhelper.SyncNewProgram(program);
             //sync with UI
         }
     }
 
     //method to update an added program
-    public void EditProgramInfo(
+    public async Task EditProgramInfo(
                               string? programName = null,
                               string? installedVersion = null,
                               string? installDate = null,
@@ -103,38 +104,57 @@ internal class ProgramsClass
         if (downloadLink != null) { DownloadLink = downloadLink; }
         if (hidden != null) { Hidden = hidden; }
 
-        dbhelper.SyncEditedInfo(ProgramKey);
+        await dbhelper.SyncEditedInfo(ProgramKey);
         //sync with UI
 
     }
 
 
-    public void RemoveProgram()
+    public async Task RemoveProgram()
     {
-        dbhelper.SyncRemoveProgram(ProgramKey);
+        await dbhelper.SyncRemoveProgram(ProgramKey);
         ProgramsDict.Remove(ProgramKey);
         //sync with UI
     }
 
 
-    //method to add programs from a given keylist
-    public static void AddPrograms(List<string> keyslist)
+    public async Task RefreshProgram()
+    {
+        await Task.Delay(1);
+        //check if program links got updated
+        //if yes grab new links and update program info
+    }
+
+
+    public static async Task RefreshPrograms(List<string> keyslist)
+    {
+        foreach(string key in keyslist)
+        {
+            ProgramsClass program = ProgramsDict[key];
+            await program.RefreshProgram();
+        }
+    }
+
+    public static async Task Removeprograms(List<string> keyslist)
     {
         foreach (string key in keyslist)
         {
-            GetProgramInfo(key);
+            ProgramsClass program = ProgramsDict[key];
+            await program.RemoveProgram();
         }
     }
 
 
-
-
-
-
-
-
-
+    //method to add programs from a given keylist
+    public static async Task AddPrograms(List<string> keyslist)
+    {
+        foreach (string key in keyslist)
+        {
+            await GetProgramInfo(key);
+        }
+    }
 }
+
 
 public class KeyStuff
 {
@@ -161,8 +181,6 @@ public class KeyStuff
                 }
             }
         }
-
         return subkeys;
     }
-
 }
