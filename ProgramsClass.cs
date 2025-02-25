@@ -18,7 +18,7 @@ internal class ProgramsClass
     //local attributes
 
     public required string ProgramKey { get; set; }
-    public string? ProgramName { get; set; }
+    public required string ProgramName { get; set; }
     public string? InstalledVersion { get; set; }
     public string? InstallDate { get; set; }
 
@@ -50,6 +50,7 @@ internal class ProgramsClass
     //method to add 1 program given it's subkey
     public static async Task GetProgramInfo(string subkeyPath)
     {
+
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
 
         // Get program details
@@ -69,18 +70,14 @@ internal class ProgramsClass
                 InstalledVersion = installedVersion,
                 InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8],
                 Hidden = 0
-                //LatestVersion = WebScraping.GetVersion(programName),
-                //OfficialPage = WebScraping.GetOfficialPage(programName),
-                //VersionPage = WebScraping.GetVersionPage(programName),
-                //DownloadPage = WebScraping.GetDownloadPage(programName),
-                //DownloadLink = WebScraping.GetDownloadLink(programName)
             };
             ProgramsDict.Add(subkeyPath, program);
-            Console.WriteLine("1 program added");
             await dbhelper.SyncNewProgram(program);
             //sync with UI
         }
     }
+
+    
 
     //method to update an added program
     public async Task EditProgramInfo(
@@ -123,6 +120,19 @@ internal class ProgramsClass
         await Task.Delay(1);
         //check if program links got updated
         //if yes grab new links and update program info
+
+    }
+    public async Task InitializeLinks() 
+    {
+
+        var programlinks = new WebScraping(this);
+        await programlinks.InitializeLinks();
+
+        await this.EditProgramInfo(latestVersion:programlinks.LatestVersion,
+                                   officialPage:programlinks.OfficialPage,
+                                   versionPage:programlinks.VersionPage,
+                                   downloadPage:programlinks.DownloadPage,
+                                   downloadLink:programlinks.DownloadLink);
     }
 
 
@@ -144,6 +154,15 @@ internal class ProgramsClass
         }
     }
 
+    public static async Task InitializeLinkss(List<string> keyslist)
+    {
+        foreach (string key in keyslist)
+        {
+            ProgramsClass program = ProgramsDict[key];
+            await program.InitializeLinks();
+        }
+    }
+
 
     //method to add programs from a given keylist
     public static async Task AddPrograms(List<string> keyslist)
@@ -156,7 +175,7 @@ internal class ProgramsClass
 }
 
 
-public class KeyStuff
+internal class KeyStuff
 {
 
     // Method to get all subkey names from the registry

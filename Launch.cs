@@ -14,12 +14,14 @@ internal class Launch
     {
         bool firstrundone;
         bool.TryParse(ConfigurationManager.AppSettings["Firstrundone"], out firstrundone);
-        Console.WriteLine($"{firstrundone}");
 
         // 1st use initialization:
         if (!firstrundone) { await DoFirstTimeStuff(); }
         //average use
-        else { await ProgramsClass.RefreshPrograms(ProgramsClass.ProgramsDict.Keys.ToList());}
+        else 
+        { 
+            await ProgramsClass.RefreshPrograms(ProgramsClass.ProgramsDict.Keys.ToList());
+        }
     }
 
 
@@ -31,7 +33,10 @@ internal class Launch
         ConfigurationManager.RefreshSection("appSettings");
 
         AppData.InitializeDatabase();
-        await ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());    
+        List<string> allprograms = KeyStuff.GetInstalledProgramSubkeys();
+        await ProgramsClass.AddPrograms(allprograms);
+        await ProgramsClass.InitializeLinkss(allprograms);
+
 
     }
 

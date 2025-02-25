@@ -20,7 +20,8 @@ internal static class Program
         //Application.Run(new Form1());
 
 
-        await Launch.Start();
+        //await Launch.Start();
+        //WebScraping programWeb = await WebScraping.InitializeLinks("7zip");
 
         //string key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop";
         //ProgramsClass program = ProgramsClass.ProgramsDict[key];
@@ -30,6 +31,20 @@ internal static class Program
         {
             Console.WriteLine(programe.Value);
         }*/
+
+        
+        /*string testUrl = "https://visualstudio.microsoft.com/downloads/";
+        List<string> links = new();
+        links.Add(testUrl);
+
+        List<string> detectedVersions = await WebScraping.ScanForPagesVersions(links);
+
+        Console.WriteLine("Potential Versions Found:");
+        foreach (string version in detectedVersions)
+        {
+            Console.WriteLine(version);
+        }*/
+        
 
         Console.WriteLine("Done!");
 
