@@ -30,7 +30,7 @@ internal class ProgramsClass
     public string? DownloadLink { get; set; }
 
     //authentication attributes
-    public string? _username { get; set; }
+    public int? CheckBetas { get; set; }
     public string? _password { get; set; }
 
     //bool attribute
@@ -69,7 +69,8 @@ internal class ProgramsClass
                 ProgramName = programName,
                 InstalledVersion = installedVersion,
                 InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8],
-                Hidden = 0
+                Hidden = 0,
+                CheckBetas = 0
             };
             ProgramsDict.Add(subkeyPath, program);
             await dbhelper.SyncNewProgram(program);
@@ -89,7 +90,8 @@ internal class ProgramsClass
                               string? versionPage = null,
                               string? downloadPage = null,
                               string? downloadLink = null,
-                              int? hidden = null)
+                              int? hidden = null,
+                              int? checkbetas = null)
     {
         if (programName != null) { ProgramName = programName; }
         if (installedVersion != null) { InstalledVersion = installedVersion; }
@@ -100,6 +102,7 @@ internal class ProgramsClass
         if (downloadPage != null) { DownloadPage = downloadPage; }
         if (downloadLink != null) { DownloadLink = downloadLink; }
         if (hidden != null) { Hidden = hidden; }
+        if (checkbetas != null){ CheckBetas = checkbetas; }
 
         await dbhelper.SyncEditedInfo(ProgramKey);
         //sync with UI
@@ -115,33 +118,21 @@ internal class ProgramsClass
     }
 
 
-    public async Task RefreshProgram()
+    public async Task CheckVersion()
     {
         await Task.Delay(1);
         //check if program links got updated
         //if yes grab new links and update program info
 
     }
-    public async Task InitializeLinks() 
-    {
-
-        var programlinks = new WebScraping(this);
-        await programlinks.InitializeLinks();
-
-        await this.EditProgramInfo(latestVersion:programlinks.LatestVersion,
-                                   officialPage:programlinks.OfficialPage,
-                                   versionPage:programlinks.VersionPage,
-                                   downloadPage:programlinks.DownloadPage,
-                                   downloadLink:programlinks.DownloadLink);
-    }
 
 
-    public static async Task RefreshPrograms(List<string> keyslist)
+    public static async Task CheckVersions(List<string> keyslist)
     {
         foreach(string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
-            await program.RefreshProgram();
+            await program.CheckVersion();
         }
     }
 
@@ -154,14 +145,7 @@ internal class ProgramsClass
         }
     }
 
-    public static async Task InitializeLinkss(List<string> keyslist)
-    {
-        foreach (string key in keyslist)
-        {
-            ProgramsClass program = ProgramsDict[key];
-            await program.InitializeLinks();
-        }
-    }
+
 
 
     //method to add programs from a given keylist

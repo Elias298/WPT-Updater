@@ -2,7 +2,9 @@ using System;
 using System.Configuration;
 using System.Data.SQLite;
 using System.Threading.Tasks.Sources;
-
+using Newtonsoft.Json.Linq;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 namespace WPT_Updater;
 
 internal static class Program
@@ -13,6 +15,7 @@ internal static class Program
     [STAThread]
     static async Task Main()
     {
+        await Task.Delay(1);
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
 
@@ -21,33 +24,10 @@ internal static class Program
 
 
         //await Launch.Start();
-        //WebScraping programWeb = await WebScraping.InitializeLinks("7zip");
 
-        //string key = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop";
-        //ProgramsClass program = ProgramsClass.ProgramsDict[key];
-        //program.EditProgramInfo(programName : "lol");
+        Auth.SetProfileNumber();
 
-        /*foreach (var programe in ProgramsClass.ProgramsDict)
-        {
-            Console.WriteLine(programe.Value);
-        }*/
-
-        
-        /*string testUrl = "https://visualstudio.microsoft.com/downloads/";
-        List<string> links = new();
-        links.Add(testUrl);
-
-        List<string> detectedVersions = await WebScraping.ScanForPagesVersions(links);
-
-        Console.WriteLine("Potential Versions Found:");
-        foreach (string version in detectedVersions)
-        {
-            Console.WriteLine(version);
-        }*/
-        
-
-        Console.WriteLine("Done!");
-
+        await WebScraping.SelGotoPage();
 
     }
 }

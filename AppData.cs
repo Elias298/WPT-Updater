@@ -25,7 +25,7 @@ internal class AppData
                 VersionPage,
                 DownloadPage,
                 DownloadLink,
-                _username,
+                CheckBetas,
                 _password,
                 Hidden
             )
@@ -39,7 +39,7 @@ internal class AppData
                 @VersionPage,
                 @DownloadPage,
                 @DownloadLink,
-                @_username,
+                @CheckBetas,
                 @_password,
                 @Hidden
             );";
@@ -55,7 +55,7 @@ internal class AppData
                     VersionPage = @VersionPage,
                     DownloadPage = @DownloadPage,
                     DownloadLink = @DownloadLink,
-                    _username = @_username,
+                    CheckBetas = @CheckBetas,
                     _password = @_password,
                     Hidden = @Hidden
                 WHERE
@@ -84,7 +84,7 @@ internal class AppData
                             VersionPage TEXT,
                             DownloadPage TEXT,
                             DownloadLink TEXT,
-                            _username TEXT,
+                            CheckBetas INT,
                             _password TEXT,
                             Hidden INT
                         )");

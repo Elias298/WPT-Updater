@@ -17,25 +17,29 @@ internal class Launch
 
         // 1st use initialization:
         if (!firstrundone) { await DoFirstTimeStuff(); }
-        //average use
-        else 
-        { 
-            await ProgramsClass.RefreshPrograms(ProgramsClass.ProgramsDict.Keys.ToList());
-        }
+
+
+
+        //await ProgramsClass.CheckVersions(ProgramsClass.ProgramsDict.Keys.ToList());
+
+
     }
 
 
     public static async Task DoFirstTimeStuff()
     {
+        //mark first run as done
         var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         config.AppSettings.Settings["Firstrundone"].Value = "true";
         config.Save(ConfigurationSaveMode.Modified);
         ConfigurationManager.RefreshSection("appSettings");
 
+
+        Auth.SetProfileNumber();     
+        
         AppData.InitializeDatabase();
-        List<string> allprograms = KeyStuff.GetInstalledProgramSubkeys();
-        await ProgramsClass.AddPrograms(allprograms);
-        await ProgramsClass.InitializeLinkss(allprograms);
+
+        await ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
 
 
     }
