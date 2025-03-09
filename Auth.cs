@@ -60,9 +60,9 @@ namespace WPT_Updater
             }
         }
 
-        public static void SetProfileNumber()
+        public static async Task SetProfileNumber()
         {
-
+            await Task.Delay(0);
             //display profiles using GetProfiles()
             //user inputs profile number
             string profilenumber = "1"; //example

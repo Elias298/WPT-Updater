@@ -23,11 +23,8 @@ internal static class Program
         //Application.Run(new Form1());
 
 
-        //await Launch.Start();
+        await Launch.Start();
 
-        Auth.SetProfileNumber();
-
-        await WebScraping.SelGotoPage();
 
     }
 }

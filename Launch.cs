@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OpenQA.Selenium.DevTools.V131.Runtime;
 
 namespace WPT_Updater;
 
@@ -19,8 +20,9 @@ internal class Launch
         if (!firstrundone) { await DoFirstTimeStuff(); }
 
 
+        //await ProgramsClass.CheckLatestVersions(ProgramsClass.ProgramsDict.Keys.ToList());
 
-        //await ProgramsClass.CheckVersions(ProgramsClass.ProgramsDict.Keys.ToList());
+        //await ProgramsClass.FetchUpdates(ProgramsClass.OutdatedPrograms);
 
 
     }
@@ -35,7 +37,7 @@ internal class Launch
         ConfigurationManager.RefreshSection("appSettings");
 
 
-        Auth.SetProfileNumber();     
+        await Auth.SetProfileNumber();     
         
         AppData.InitializeDatabase();
 

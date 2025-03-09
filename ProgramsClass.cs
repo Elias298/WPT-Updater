@@ -36,8 +36,10 @@ internal class ProgramsClass
     //bool attribute
     public int? Hidden { get; set; }
 
+
     public static AppData dbhelper = new AppData();
     public static Dictionary<string, ProgramsClass> ProgramsDict = dbhelper.GetAllPrograms();
+    public static List<string> OutdatedPrograms = new List<string>();
 
 
     // Override ToString for easy debugging
@@ -118,21 +120,56 @@ internal class ProgramsClass
     }
 
 
-    public async Task CheckVersion()
+    public async Task CheckLatestVersion()
     {
-        await Task.Delay(1);
-        //check if program links got updated
-        //if yes grab new links and update program info
+        var webprogram = new WebScraping(this);
+        await webprogram.CheckVersion();
 
+        if (this.OfficialPage == null || this.DownloadPage == null){
+            await this.EditProgramInfo(officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage); }
+
+        if (webprogram.LatestVersion != this.InstalledVersion)
+        {
+            await this.EditProgramInfo(latestVersion: webprogram.LatestVersion);
+            OutdatedPrograms.Add(this.ProgramKey);
+        }
+        else
+        {
+            await this.EditProgramInfo(downloadLink: "installed"); 
+        }
+    }
+
+    public async Task FetchUpdate()
+    {
+        
+        if(this.DownloadLink != "installed")
+        {
+            var webprogram = new WebScraping(this);
+            await webprogram.FetchUpdate();
+            await this.EditProgramInfo(versionPage: webprogram.VersionPage,downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
+        }
     }
 
 
-    public static async Task CheckVersions(List<string> keyslist)
+    public static async Task FetchUpdates(List<string> keyslist)
+    {
+        foreach (string key in keyslist)
+        {
+            ProgramsClass program = ProgramsDict[key];
+            await program.FetchUpdate();
+        }
+    }
+
+
+    public static async Task CheckLatestVersions(List<string> keyslist)
     {
         foreach(string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
-            await program.CheckVersion();
+            if (program.Hidden == 0)
+            {
+                await program.CheckLatestVersion();
+            }
         }
     }
 
@@ -156,6 +193,20 @@ internal class ProgramsClass
             await GetProgramInfo(key);
         }
     }
+
+    /*public static List<ProgramsClass> CheckOutdatedPrograms()
+    {
+        List<ProgramsClass> outdatedprograms = new();
+        foreach (ProgramsClass program in ProgramsDict.Values)
+        {
+            if (program.InstalledVersion != program.LatestVersion && program.Hidden == 0)
+            {
+                outdatedprograms.Add(program);
+            }
+        }
+        return outdatedprograms;
+    }*/
+
 }
 
 

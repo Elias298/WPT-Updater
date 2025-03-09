@@ -64,21 +64,50 @@ internal class WebScraping
         else { Urls.Add(VersionPage); }
 
         //Use Urls list and start version finding algorithm
+        string foundversion = "##.##.#";
 
+        
 
-
-           
+        this.LatestVersion = foundversion;
     }
 
     public async Task GetOfficialPage()
     {
         await Task.Delay(1);
 
+        //code to find officialpage
+        string officialpage = "https://.....";
+
+
+        this.OfficialPage = officialpage;
     }
 
     public async Task GetDownloadPage()
     {
         await Task.Delay(1);
+
+        //code to find officialpage
+        string downloadpage = "https://.....";
+
+
+        this.DownloadPage = downloadpage;
+    }
+
+    public async Task FetchUpdate()
+    {
+        await Task.Delay(1);
+
+        //start from this.DownloadPage
+        //if nothing found recursively check daughter pages or other "download pages" from google search
+        //code
+        string versionpage = "https://.....";
+        string downloadlink = "https://.....";
+        string downloadpage = "https://.....";
+
+
+        this.VersionPage = versionpage;
+        this.DownloadLink = downloadlink;
+        this.DownloadPage = downloadpage;
     }
 
 
@@ -132,7 +161,7 @@ internal class WebScraping
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}"); // Change to "Default" or your profile name
         using (IWebDriver driver = new ChromeDriver(options))
         {
-            driver.Navigate().GoToUrl("https://google.com");
+            driver.Navigate().GoToUrl("https://www.mathworks.com/");
             await Task.Delay(10000);
             Console.WriteLine("Selenium is working!");
         }
