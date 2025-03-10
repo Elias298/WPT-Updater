@@ -16,8 +16,14 @@ internal class Launch
         bool firstrundone;
         bool.TryParse(ConfigurationManager.AppSettings["Firstrundone"], out firstrundone);
 
+        
+
         // 1st use initialization:
         if (!firstrundone) { await DoFirstTimeStuff(); }
+        else 
+        {
+            ProgramsClass.ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
+        }
 
 
         //await ProgramsClass.CheckLatestVersions(ProgramsClass.ProgramsDict.Keys.ToList());
@@ -37,7 +43,7 @@ internal class Launch
         ConfigurationManager.RefreshSection("appSettings");
 
 
-        await Auth.SetProfileNumber();     
+        //await Auth.SetProfileNumber();     
         
         AppData.InitializeDatabase();
 

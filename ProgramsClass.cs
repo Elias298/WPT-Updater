@@ -38,7 +38,7 @@ internal class ProgramsClass
 
 
     public static AppData dbhelper = new AppData();
-    public static Dictionary<string, ProgramsClass> ProgramsDict = dbhelper.GetAllPrograms();
+    public static Dictionary<string, ProgramsClass> ProgramsDict = new();
     public static List<string> OutdatedPrograms = new List<string>();
 
 
