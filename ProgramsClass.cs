@@ -74,8 +74,16 @@ internal class ProgramsClass
                 Hidden = 0,
                 CheckBetas = 0
             };
-            ProgramsDict.Add(subkeyPath, program);
-            await dbhelper.SyncNewProgram(program);
+
+            
+            if (ProgramsDict.ContainsKey(subkeyPath))
+            {
+                //ProgramsDict.Add(subkeyPath, program);
+                await dbhelper.SyncNewProgram(program);
+                Console.WriteLine(program);
+                
+            }
+            Console.WriteLine(program);
             //sync with UI
         }
     }
@@ -232,6 +240,7 @@ internal class KeyStuff
                 foreach (string subKeyName in key.GetSubKeyNames())
                 {
                     subkeys.Add($"{registryPath}\\{subKeyName}");
+                    
                 }
             }
         }
