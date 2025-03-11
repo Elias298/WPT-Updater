@@ -74,16 +74,8 @@ internal class ProgramsClass
                 Hidden = 0,
                 CheckBetas = 0
             };
-
-            
-            if (ProgramsDict.ContainsKey(subkeyPath))
-            {
-                //ProgramsDict.Add(subkeyPath, program);
-                await dbhelper.SyncNewProgram(program);
-                Console.WriteLine(program);
-                
-            }
-            Console.WriteLine(program);
+            ProgramsDict.Add(subkeyPath, program);
+            await dbhelper.SyncNewProgram(program);
             //sync with UI
         }
     }
