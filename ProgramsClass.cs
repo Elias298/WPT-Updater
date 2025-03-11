@@ -232,6 +232,7 @@ internal class KeyStuff
                 foreach (string subKeyName in key.GetSubKeyNames())
                 {
                     subkeys.Add($"{registryPath}\\{subKeyName}");
+                    
                 }
             }
         }

@@ -31,5 +31,26 @@ namespace WPT_Updater
         {
 
         }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            // Show the context menu (dropdown) below the button
+            kebabMenuStrip.Show(button1, new Point(0, button1.Height));  // Positioning it below the button
+        }
+
+        private void kebabMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
