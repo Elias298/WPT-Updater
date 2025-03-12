@@ -12,7 +12,7 @@ namespace WPT_Updater
         //attributes
 
         //The Path attribute is static since it is the same for all downloads
-        private readonly static string Path = "C:\\Users\\Zul\\Desktop\\7-zip.exe";
+        private string Path = $"C:\\Users\\{Auth.UserName}\\Desktop\\";
         //The Link attribute is provided by the ProgramsClass object
         private readonly string Link;
         //The following attributes are used to control the download process (start, pause, resume, show progress, stop)
@@ -39,6 +39,7 @@ namespace WPT_Updater
             ChunkSize = chunkSizeInBytes;
             contentLength = new Lazy<long>(GetContentLength);
             Progress = progress;
+            Path += program.DownloadLink.Substring(program.DownloadLink.LastIndexOf('/') + 1);
 
             if (!File.Exists(Path))
                 BytesWritten = 0;
@@ -115,7 +116,7 @@ namespace WPT_Updater
             AllowedToRun = false;
         }
 
-        static void Main(string[] args)
+        /*static void Main(string[] args)
         {
             var program = new ProgramsClass()
             {
@@ -125,7 +126,7 @@ namespace WPT_Updater
             };
             var fw = new Download(program);
 
-            // Display progress...
+            //Display progress...
             Task.Factory.StartNew(() =>
             {
                 while (!fw.Done)
@@ -147,7 +148,7 @@ namespace WPT_Updater
             fw.Start().ContinueWith(t => Console.WriteLine("Done"));
 
             Console.ReadKey();
-        }
+        }*/
 
     }
 }
