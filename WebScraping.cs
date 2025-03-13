@@ -16,6 +16,8 @@ using Microsoft.Win32;
 using System.IO;
 using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
+using OpenQA.Selenium.Support.UI;
+using static OpenQA.Selenium.BiDi.Modules.Network.UrlPattern;
 
 
 namespace WPT_Updater;
@@ -36,13 +38,11 @@ internal class WebScraping
     public string? DownloadPage { get; set; }
     public string? DownloadLink { get; set; }
     public int? CheckBetas { get; set; }
-
-
-    public WebScraping(ProgramsClass program) 
+    public WebScraping(ProgramsClass program)
     {
-        ProgramName = program.ProgramName;
-        InstalledVersion = program.InstalledVersion;
 
+        ProgramName = Regex.Replace(program.ProgramName, @"\b\d+(\.\d+)+\b", "");
+        InstalledVersion = program.InstalledVersion;
         LatestVersion = program.LatestVersion;
         OfficialPage = program.OfficialPage;
         VersionPage = program.VersionPage;
@@ -66,31 +66,21 @@ internal class WebScraping
         //Use Urls list and start version finding algorithm
         string foundversion = "##.##.#";
 
-        
+
 
         this.LatestVersion = foundversion;
     }
 
     public async Task GetOfficialPage()
     {
-        await Task.Delay(1);
-
-        //code to find officialpage
-        string officialpage = "https://.....";
-
-
-        this.OfficialPage = officialpage;
+        List<string> officialpage = await FirstWebResults($"{ProgramName} official website", 1);
+        this.OfficialPage = officialpage[0];
     }
 
     public async Task GetDownloadPage()
     {
-        await Task.Delay(1);
-
-        //code to find officialpage
-        string downloadpage = "https://.....";
-
-
-        this.DownloadPage = downloadpage;
+        List<string> downloadpage = await FirstWebResults($"{ProgramName} official download", 1);
+        this.DownloadPage = downloadpage[0];
     }
 
     public async Task FetchUpdate()
@@ -113,12 +103,54 @@ internal class WebScraping
 
 
 
-    public static async Task<List<string>> FirstWebResults(string websearch, int number) 
+    public static async Task<List<string>> FirstWebResults(string searchQuery, int n)
     {
-        await Task.Delay(1);
-        List<string> results = new();
-        return results;
+        // Initialize ChromeDriver
+        var options = new ChromeOptions();
+        options.AddArgument("--window-position=-32000,-32000");
+        options.AddArgument("--headless=new");
+        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
+        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
+        IWebDriver driver = new ChromeDriver(options);
 
+        try
+        {
+            // Navigate to Google
+            driver.Navigate().GoToUrl("https://www.google.com");
+
+            // Find the search box and enter the query
+            IWebElement searchBox = driver.FindElement(By.Name("q"));
+            searchBox.SendKeys(searchQuery);
+            searchBox.Submit();
+
+            // Wait for the results to load asynchronously
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            await Task.Run(() => wait.Until(d => d.FindElement(By.CssSelector("div.g"))));
+
+            // Find all search result links (excluding ads)
+            var searchResults = driver.FindElements(By.CssSelector("div.g:not(.uEierd):not(.commercial-unit-desktop-top) a")); // Exclude ads
+
+            // Extract the first n links (ignoring ads)
+            List<string> links = new List<string>();
+            int count = 0;
+            foreach (var result in searchResults)
+            {
+                string href = result.GetAttribute("href");
+                if (!string.IsNullOrEmpty(href) && !href.Contains("googleadservices.com")) // Additional ad filtering
+                {
+                    links.Add(href);
+                    count++;
+                    if (count >= n) break; // Stop after collecting n links
+                }
+            }
+
+            return links;
+        }
+        finally
+        {
+            // Close the browser
+            driver.Quit();
+        }
     }
 
 
@@ -130,7 +162,7 @@ internal class WebScraping
         List<string> versions = new();
         Regex versionRegex = new(@"\b\d+(\.\d+)+\b");
         using HttpClient client = new();
-        if (urls!=null)
+        if (urls != null)
         {
             foreach (string url in urls)
             {
@@ -156,7 +188,7 @@ internal class WebScraping
     public static async Task SelGotoPage()
     {
         var options = new ChromeOptions();
-        //options.AddArgument("--window-position=-32000,-32000");
+        options.AddArgument("--window-position=-32000,-32000");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}"); // Change to "Default" or your profile name
         using (IWebDriver driver = new ChromeDriver(options))
