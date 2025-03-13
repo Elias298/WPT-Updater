@@ -10,7 +10,7 @@ using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 namespace WPT_Updater;
 
-internal static class Program
+internal class Program
 {
     /// <summary>
     ///  The main entry point for the application.
@@ -36,62 +36,6 @@ internal static class Program
             // Accept cookies if prompted
             await AcceptCookiesIfNeeded(driver, wait);
 
-            // Find the search box and enter the query
-            IWebElement searchBox = wait.Until(ExpectedConditions.ElementIsVisible(By.Name("q")));
-            searchBox.SendKeys(searchQuery);
-            searchBox.SendKeys(OpenQA.Selenium.Keys.Enter);
-
-            // Wait for results to load
-            await Task.Delay(1000); // Small wait for results to stabilize
-
-            // Get search result links
-            IReadOnlyCollection<IWebElement> searchResults = wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(By.CssSelector("h3")));
-
-            List<string> links = new List<string>();
-            foreach (var result in searchResults.Take(numLinks))
-            {
-                try
-                {
-                    IWebElement parent = result.FindElement(By.XPath("./ancestor::a"));
-                    string url = parent.GetAttribute("href");
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        links.Add(url);
-                    }
-                }
-                catch (NoSuchElementException)
-                {
-                    continue;
-                }
-            }
-
-            // Print extracted links
-            Console.WriteLine($"Top {numLinks} Search Results:");
-            foreach (var link in links)
-            {
-                Console.WriteLine(link);
-            }
-        }
-        finally
-        {
-            driver.Quit();
-        }
+        
     }
-
-    static async Task AcceptCookiesIfNeeded(IWebDriver driver, WebDriverWait wait)
-    {
-        try
-        {
-            var acceptButton = wait.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("button[aria-label='Accept all']")));
-            acceptButton.Click();
-            await Task.Delay(500); // Allow time for cookie modal to close
-        }
-        catch (WebDriverTimeoutException)
-        {
-            // No cookie prompt appeared, continue
-        }
-    }
-
-
-
 }

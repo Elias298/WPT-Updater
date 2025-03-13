@@ -116,37 +116,27 @@ namespace WPT_Updater
             AllowedToRun = false;
         }
 
-        /*static void Main(string[] args)
-        {
-            var program = new ProgramsClass()
-            {
-                ProgramKey = "key",
-                ProgramName = "name",
-                DownloadLink = "https://7-zip.org/a/7z2409-x64.exe"
-            };
-            var fw = new Download(program);
-
-            //Display progress...
-            Task.Factory.StartNew(() =>
-            {
-                while (!fw.Done)
-                {
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(string.Format("ContentLength: {0} | BytesWritten: {1}", fw.ContentLength, fw.BytesWritten));
-                }
-            });
-
-            // Start the download...
-            fw.Start();
-
             // Simulate pause...
             Thread.Sleep(500);
-            fw.Pause();
+            fw1.Pause();
+            fw2.Pause();
             Thread.Sleep(2000);
 
             // Start the download from where we left, and when done print to console.
-            fw.Start().ContinueWith(t => Console.WriteLine("Done"));
+            fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
+            fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
+            Console.ReadKey();
+        }*/
 
+            // Simulate pause...
+            Thread.Sleep(500);
+            fw1.Pause();
+            fw2.Pause();
+            Thread.Sleep(2000);
+
+            // Start the download from where we left, and when done print to console.
+            fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
+            fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
             Console.ReadKey();
         }*/
 
