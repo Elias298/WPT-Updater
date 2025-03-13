@@ -116,51 +116,5 @@ namespace WPT_Updater
             AllowedToRun = false;
         }
 
-        /*static void Main(string[] args)
-        {
-            var program1 = new ProgramsClass()
-            {
-                ProgramKey = "key",
-                ProgramName = "name",
-                DownloadLink = "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-710tr.exe"
-            };
-
-            var program2 = new ProgramsClass()
-            {
-                ProgramKey = "key",
-                ProgramName = "name",
-                DownloadLink = "https://7-zip.org/a/7z2409-x64.exe"
-            };
-
-            var fw1 = new Download(program1);
-            var fw2 = new Download(program2);
-
-            //Display progress...
-            Task.Factory.StartNew(() =>
-            {
-                while (!fw1.Done && !fw2.Done)
-                {
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(string.Format("ContentLength: {0} | BytesWritten: {1}", fw1.ContentLength, fw1.BytesWritten));
-                    Console.Write(string.Format("ContentLength: {0} | BytesWritten: {1}", fw2.ContentLength, fw2.BytesWritten));
-                }
-            });
-
-            // Start the download...
-            fw1.Start();
-            fw2.Start();
-
-            // Simulate pause...
-            Thread.Sleep(500);
-            fw1.Pause();
-            fw2.Pause();
-            Thread.Sleep(2000);
-
-            // Start the download from where we left, and when done print to console.
-            fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
-            fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
-            Console.ReadKey();
-        }*/
-
     }
 }
