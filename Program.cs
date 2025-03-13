@@ -6,6 +6,8 @@ using System.Threading.Tasks.Sources;
 using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 namespace WPT_Updater;
 
 internal static class Program
@@ -16,41 +18,80 @@ internal static class Program
     [STAThread]
     static async Task Main()
     {
-        await Task.Delay(1);
-        // To customize application configuration such as set high DPI settings or default font,
-        // see https://aka.ms/applicationconfiguration.
+        int numLinks = 5; // Number of links to extract
+        string searchQuery = "7zip official page";
 
-        //ApplicationConfiguration.Initialize();
-        //Application.Run(new Form1());
+        ChromeOptions options = new ChromeOptions();
+        //options.AddArgument("--headless"); // Run in headless mode (remove if you want to see the browser)
+        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
+        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
 
+        using IWebDriver driver = new ChromeDriver(options);
+        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(4));
 
-        //await Launch.Start();
-        /*foreach (var program in ProgramsClass.ProgramsDict.Values.ToList())
+        try
         {
-            Console.WriteLine(program);
-        }*/
+            driver.Navigate().GoToUrl("https://www.google.com");
 
-        //Download download = new()
+            // Accept cookies if prompted
+            await AcceptCookiesIfNeeded(driver, wait);
 
-        var program = new ProgramsClass()
+            // Find the search box and enter the query
+            IWebElement searchBox = wait.Until(ExpectedConditions.ElementIsVisible(By.Name("q")));
+            searchBox.SendKeys(searchQuery);
+            searchBox.SendKeys(OpenQA.Selenium.Keys.Enter);
+
+            // Wait for results to load
+            await Task.Delay(1000); // Small wait for results to stabilize
+
+            // Get search result links
+            IReadOnlyCollection<IWebElement> searchResults = wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(By.CssSelector("h3")));
+
+            List<string> links = new List<string>();
+            foreach (var result in searchResults.Take(numLinks))
+            {
+                try
+                {
+                    IWebElement parent = result.FindElement(By.XPath("./ancestor::a"));
+                    string url = parent.GetAttribute("href");
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        links.Add(url);
+                    }
+                }
+                catch (NoSuchElementException)
+                {
+                    continue;
+                }
+            }
+
+            // Print extracted links
+            Console.WriteLine($"Top {numLinks} Search Results:");
+            foreach (var link in links)
+            {
+                Console.WriteLine(link);
+            }
+        }
+        finally
         {
-            ProgramKey = "key",
-            ProgramName = "name",
-            DownloadLink = "https://ash-speed.hetzner.com/100MB.bin"
-        };
-
-
-        var program2 = new ProgramsClass()
-        {
-            ProgramKey = "key",
-            ProgramName = "name",
-            DownloadLink = "https://7-zip.org/a/7z2409-x64.exe"
-        };
-        var fw = new Download(program);
-        var fw2 = new Download(program2);
-        await fw2.Start();
-        Console.WriteLine("lol");
-        await fw.Start();
-        Console.WriteLine("lol2");
+            driver.Quit();
+        }
     }
+
+    static async Task AcceptCookiesIfNeeded(IWebDriver driver, WebDriverWait wait)
+    {
+        try
+        {
+            var acceptButton = wait.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("button[aria-label='Accept all']")));
+            acceptButton.Click();
+            await Task.Delay(500); // Allow time for cookie modal to close
+        }
+        catch (WebDriverTimeoutException)
+        {
+            // No cookie prompt appeared, continue
+        }
+    }
+
+
+
 }
