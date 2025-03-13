@@ -32,13 +32,12 @@ internal static class Program
 
         //Download download = new()
 
-        var program = new ProgramsClass()
+        var program1 = new ProgramsClass()
         {
             ProgramKey = "key",
             ProgramName = "name",
-            DownloadLink = "https://ash-speed.hetzner.com/100MB.bin"
+            DownloadLink = "https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-710tr.exe"
         };
-
 
         var program2 = new ProgramsClass()
         {
@@ -46,11 +45,24 @@ internal static class Program
             ProgramName = "name",
             DownloadLink = "https://7-zip.org/a/7z2409-x64.exe"
         };
-        var fw = new Download(program);
+
+        var fw1 = new Download(program1);
         var fw2 = new Download(program2);
+
+
+        // Start the download...
+        await fw1.Start();
         await fw2.Start();
-        Console.WriteLine("lol");
-        await fw.Start();
-        Console.WriteLine("lol2");
+
+        // Simulate pause...
+        Thread.Sleep(500);
+        fw1.Pause();
+        fw2.Pause();
+        Thread.Sleep(2000);
+
+        // Start the download from where we left, and when done print to console.
+        await fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
+        await fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
+        Console.ReadKey();
     }
 }
