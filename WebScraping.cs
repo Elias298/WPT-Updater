@@ -38,7 +38,7 @@ internal class WebScraping
     public string? DownloadPage { get; set; }
     public string? DownloadLink { get; set; }
     public int? CheckBetas { get; set; }
-    public WebScraping(ProgramsClass program) 
+    public WebScraping(ProgramsClass program)
     {
 
         ProgramName = Regex.Replace(program.ProgramName, @"\b\d+(\.\d+)+\b", "");
@@ -66,7 +66,7 @@ internal class WebScraping
         //Use Urls list and start version finding algorithm
         string foundversion = "##.##.#";
 
-        
+
 
         this.LatestVersion = foundversion;
     }
@@ -162,7 +162,7 @@ internal class WebScraping
         List<string> versions = new();
         Regex versionRegex = new(@"\b\d+(\.\d+)+\b");
         using HttpClient client = new();
-        if (urls!=null)
+        if (urls != null)
         {
             foreach (string url in urls)
             {
