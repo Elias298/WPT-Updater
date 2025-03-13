@@ -116,29 +116,6 @@ namespace WPT_Updater
             AllowedToRun = false;
         }
 
-            // Simulate pause...
-            Thread.Sleep(500);
-            fw1.Pause();
-            fw2.Pause();
-            Thread.Sleep(2000);
-
-            // Start the download from where we left, and when done print to console.
-            fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
-            fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
-            Console.ReadKey();
-        }*/
-
-            // Simulate pause...
-            Thread.Sleep(500);
-            fw1.Pause();
-            fw2.Pause();
-            Thread.Sleep(2000);
-
-            // Start the download from where we left, and when done print to console.
-            fw1.Start().ContinueWith(t => Console.WriteLine("Done"));
-            fw2.Start().ContinueWith(t => Console.WriteLine("Done"));
-            Console.ReadKey();
-        }*/
 
     }
 }

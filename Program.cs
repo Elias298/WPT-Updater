@@ -18,24 +18,6 @@ internal class Program
     [STAThread]
     static async Task Main()
     {
-        int numLinks = 5; // Number of links to extract
-        string searchQuery = "7zip official page";
-
-        ChromeOptions options = new ChromeOptions();
-        //options.AddArgument("--headless"); // Run in headless mode (remove if you want to see the browser)
-        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
-        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
-
-        using IWebDriver driver = new ChromeDriver(options);
-        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(4));
-
-        try
-        {
-            driver.Navigate().GoToUrl("https://www.google.com");
-
-            // Accept cookies if prompted
-            await AcceptCookiesIfNeeded(driver, wait);
-
-        
+        await Task.Delay(1);
     }
 }
