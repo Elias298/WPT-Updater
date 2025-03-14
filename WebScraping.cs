@@ -18,16 +18,13 @@ using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
 using OpenQA.Selenium.Support.UI;
 using static OpenQA.Selenium.BiDi.Modules.Network.UrlPattern;
+using System.Diagnostics;
 
 
 namespace WPT_Updater;
 
 internal class WebScraping
 {
-    public List<string> Urls = new();
-
-    public Task<List<string>>? VersionsfromPages;
-
     //attributes from ProgramsClass
     public string? ProgramName { get; set; }
     public string? InstalledVersion { get; set; }
@@ -54,6 +51,7 @@ internal class WebScraping
 
     public async Task CheckVersion()
     {
+        List<string> Urls = new List<string>();
         if (OfficialPage == null) { await this.GetOfficialPage(); }
         if (OfficialPage != null) { Urls.Add(OfficialPage); }
 
@@ -63,9 +61,18 @@ internal class WebScraping
         if (VersionPage == null) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
         else { Urls.Add(VersionPage); }
 
-        //Use Urls list and start version finding algorithm
-        string foundversion = "##.##.#";
+        List<List<string>> pagesversions = new();
+        foreach(string url in Urls)
+        {
+            pagesversions.Add(ScanForVersions(url));
+        }
 
+        List<string> allversions = pagesversions.SelectMany(sublist => sublist).ToList();
+        Dictionary<string, int> points = allversions.Distinct().ToDictionary(x => x, x => 0);
+
+
+
+        string foundversion = "##.##.#";
 
 
         this.LatestVersion = foundversion;
@@ -107,7 +114,6 @@ internal class WebScraping
     {
         // Initialize ChromeDriver
         var options = new ChromeOptions();
-        options.AddArgument("--window-position=-32000,-32000");
         options.AddArgument("--headless=new");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
@@ -155,49 +161,74 @@ internal class WebScraping
 
 
 
-    //The following 2 methods are just prototypes and shall be changed later
-    public static async Task<List<string>> ScanForPagesVersions(List<string> urls)
+    public static List<string> ScanForVersions(string source)
     {
 
         List<string> versions = new();
         Regex versionRegex = new(@"\b\d+(\.\d+)+\b");
-        using HttpClient client = new();
-        if (urls != null)
-        {
-            foreach (string url in urls)
-            {
-                try
-                {
-                    string pageContent = await client.GetStringAsync(url);
 
-                    foreach (Match match in versionRegex.Matches(pageContent))
-                    {
-                        versions.Add(match.Value);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching page: {ex.Message}");
-                }
-            }
+        foreach (Match match in versionRegex.Matches(source))
+        {
+            versions.Add(match.Value);
         }
         return versions;
+        
     }
 
 
-    public static async Task SelGotoPage()
+    public static async Task<string> GetPageSourceSel(string url)
     {
         var options = new ChromeOptions();
-        options.AddArgument("--window-position=-32000,-32000");
+        options.AddArgument("--headless=new");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}"); // Change to "Default" or your profile name
+
         using (IWebDriver driver = new ChromeDriver(options))
         {
-            driver.Navigate().GoToUrl("https://www.mathworks.com/");
-            await Task.Delay(10000);
-            Console.WriteLine("Selenium is working!");
+            driver.Navigate().GoToUrl(url);
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            await Task.Run(() => wait.Until(d => d.FindElement(By.TagName("body"))));
+            string pagesource = driver.PageSource;
+            return pagesource;
         }
     }
+    public static async Task<string> GetPageSourceHC(string url)
+    {
+        using HttpClient client = new();
+        {
+            string pagesource = await client.GetStringAsync(url);
+            return pagesource;
+        }
+        
+    }
+
+    public static async Task<string> GetPageSource(string url)
+    {
+        try
+        {
+            string pagesource = await GetPageSourceHC(url);
+            Log.WriteLine($"HttpClient successfully fetched source of URL: {url}");
+            return pagesource;
+
+        }
+        catch
+        {
+            Log.WriteLine($"HttpClient failed to fetch source of URL: {url}");
+            try
+            {
+                string pagesource = await GetPageSourceSel(url);
+                Log.WriteLine($"Selenium successfully fetched source of URL: {url}");
+                return pagesource;
+            }
+            catch
+            {
+                Log.WriteLine($"Selenium failed to fetch source of URL: {url}");
+                Log.WriteLine($"unable to find pagesource of URL: {url}");
+                return "";
+            }
+        }
+    }
+
 
 
 }
