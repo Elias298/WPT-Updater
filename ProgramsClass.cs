@@ -19,7 +19,7 @@ internal class ProgramsClass
 
     public required string ProgramKey { get; set; }
     public required string ProgramName { get; set; }
-    public string? InstalledVersion { get; set; }
+    public string? InstalledVersion { get; set; } = "";
     public string? InstallDate { get; set; }
 
     //require web search attributes
@@ -45,7 +45,7 @@ internal class ProgramsClass
     // Override ToString for easy debugging
     public override string ToString()
     {
-        return $"Program: {ProgramName}, Installed Version: {InstalledVersion} Installed On: {InstallDate} \n\n";
+        return $"Program: {ProgramName}, Installed Version: {InstalledVersion} Installed On: {InstallDate}\nOfficial WebPage: {OfficialPage}, Download Page: {DownloadPage}, Latest Version: {LatestVersion}, DownloadLink: {DownloadLink}\n\n";
     }
 
 
@@ -125,13 +125,14 @@ internal class ProgramsClass
         var webprogram = new WebScraping(this);
         await webprogram.CheckVersion();
 
-        if (this.OfficialPage == null || this.DownloadPage == null){
+        if (string.IsNullOrEmpty(OfficialPage) || string.IsNullOrEmpty(DownloadPage))
+        {
             await this.EditProgramInfo(officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage); }
 
-        if (webprogram.LatestVersion != this.InstalledVersion)
+        if (webprogram.LatestVersion != InstalledVersion || (string.IsNullOrEmpty(webprogram.LatestVersion) && string.IsNullOrEmpty(InstalledVersion)))
         {
             await this.EditProgramInfo(latestVersion: webprogram.LatestVersion);
-            OutdatedPrograms.Add(this.ProgramKey);
+            OutdatedPrograms.Add(ProgramKey);
         }
         else
         {

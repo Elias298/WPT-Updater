@@ -19,6 +19,8 @@ using System.Diagnostics.Eventing.Reader;
 using OpenQA.Selenium.Support.UI;
 using static OpenQA.Selenium.BiDi.Modules.Network.UrlPattern;
 using System.Diagnostics;
+using System.ComponentModel.Design.Serialization;
+using System.Collections;
 
 
 namespace WPT_Updater;
@@ -27,7 +29,7 @@ internal class WebScraping
 {
     //attributes from ProgramsClass
     public string? ProgramName { get; set; }
-    public string? InstalledVersion { get; set; }
+    public string? InstalledVersion { get; set; } = "";
 
     public string? LatestVersion { get; set; }
     public string? OfficialPage { get; set; }
@@ -52,30 +54,68 @@ internal class WebScraping
     public async Task CheckVersion()
     {
         List<string> Urls = new List<string>();
-        if (OfficialPage == null) { await this.GetOfficialPage(); }
-        if (OfficialPage != null) { Urls.Add(OfficialPage); }
+        if (string.IsNullOrEmpty(OfficialPage)) { await this.GetOfficialPage(); }
+        if (!string.IsNullOrEmpty(OfficialPage)) { Urls.Add(OfficialPage); }
 
-        if (OfficialPage == null) { await this.GetDownloadPage(); }
-        if (DownloadPage != null) { Urls.Add(DownloadPage); }
+        if (string.IsNullOrEmpty(DownloadPage)) { await this.GetDownloadPage(); }
+        if (!string.IsNullOrEmpty(DownloadPage)) { Urls.Add(DownloadPage); }
 
-        if (VersionPage == null) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
+        if (string.IsNullOrEmpty(VersionPage)) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
         else { Urls.Add(VersionPage); }
 
         List<List<string>> pagesversions = new();
         foreach(string url in Urls)
         {
-            pagesversions.Add(ScanForVersions(url));
+            var urlsource = await GetPageSource(url);
+            pagesversions.Add(ScanForVersions(urlsource));
         }
-
+        
         List<string> allversions = pagesversions.SelectMany(sublist => sublist).ToList();
         Dictionary<string, int> points = allversions.Distinct().ToDictionary(x => x, x => 0);
+        //Console.WriteLine(string.Join(" ", points.Keys.ToList()));
+
+        Func<string, int> GetPoints = version => version.Count(c => c == '.');
+
+        if (!string.IsNullOrEmpty(InstalledVersion))
+        {
+            int Format = GetPoints(InstalledVersion);
+
+            foreach (string version in points.Keys.ToList())
+            {
+                int format = GetPoints(version);
+                if (format == Format)
+                {
+                    points[version] += 20;
+                }
+                else if (Math.Abs(format-Format)==1)
+                {
+                    points[version] += 10;
+                }
+                else
+                {
+                    points.Remove(version);
+                }
+            }
+            
+
+        }
 
 
+        //get list of top 3 most recurring items with their count, use top3[i].Value and top3[i].Count
+        /* var top3 = allversions
+            .GroupBy(n => n)                   
+            .OrderByDescending(g => g.Count())
+            .Take(3)                            
+            .Select(g => new { Value = g.Key, Count = g.Count() })
+            .ToList();
 
-        string foundversion = "##.##.#";
+        points[top3[0].Value] += 15;
+        points[top3[1].Value] += 10;
+        points[top3[2].Value] += 5;*/
 
 
-        this.LatestVersion = foundversion;
+        string latestversion = points.OrderByDescending(kv => kv.Value).First().Key;
+        this.LatestVersion = latestversion;
     }
 
     public async Task GetOfficialPage()
@@ -114,7 +154,7 @@ internal class WebScraping
     {
         // Initialize ChromeDriver
         var options = new ChromeOptions();
-        options.AddArgument("--headless=new");
+        //options.AddArgument("--headless=new");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
         IWebDriver driver = new ChromeDriver(options);
@@ -179,7 +219,7 @@ internal class WebScraping
     public static async Task<string> GetPageSourceSel(string url)
     {
         var options = new ChromeOptions();
-        options.AddArgument("--headless=new");
+        //options.AddArgument("--headless=new");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}"); // Change to "Default" or your profile name
 
