@@ -11,8 +11,8 @@ namespace WPT_Updater;
 
 internal class AppData
 {
-
-    private readonly string connectionString = "Data Source=Programs.db";
+    public static string DbPath = "Programs.db";
+    private readonly string connectionString = $"Data Source={DbPath}";
     public readonly string selectQuery = "SELECT * FROM Programs;";
     public readonly string insertQuery = @"
             INSERT INTO Programs (
@@ -71,7 +71,8 @@ internal class AppData
     // Initialize the database (create table if it doesn't exist)
     public static void InitializeDatabase()
     {
-        using (var connection = new SQLiteConnection("Data Source=Programs.db"))
+        File.Delete(DbPath);
+        using (var connection = new SQLiteConnection($"Data Source={DbPath}"))
         {
             connection.ExecuteAsync(@"
                         CREATE TABLE Programs (
@@ -105,7 +106,8 @@ internal class AppData
     //Edit program info
     public async Task SyncEditedInfo(string ProgramKey)
     {
-        ProgramsClass program = ProgramsClass.ProgramsDict[ProgramKey];
+        var ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
+        ProgramsClass program = ProgramsDict[ProgramKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
             await connection.ExecuteAsync(UpdateQuery, program);
@@ -116,7 +118,8 @@ internal class AppData
     //Remove a program
     public async Task SyncRemoveProgram(string programKey)
     {
-        ProgramsClass program = ProgramsClass.ProgramsDict[programKey];
+        var ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
+        ProgramsClass program = ProgramsDict[programKey];
         using (var connection = new SQLiteConnection(connectionString))
         {
             await connection.ExecuteAsync(DeleteQuery, program);

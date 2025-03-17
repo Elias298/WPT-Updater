@@ -22,9 +22,13 @@ internal class Launch
         if (!firstrundone) { await DoFirstTimeStuff(); }
         else 
         {
-            ProgramsClass.ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
+            
         }
 
+        if (!File.Exists("Programs.db"))
+        {
+            AppData.InitializeDatabase();
+        }
 
         //await ProgramsClass.CheckLatestVersions(ProgramsClass.ProgramsDict.Keys.ToList());
 
@@ -36,18 +40,14 @@ internal class Launch
 
     public static async Task DoFirstTimeStuff()
     {
+        await Task.Delay(1);
         //mark first run as done
         var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         config.AppSettings.Settings["Firstrundone"].Value = "true";
         config.Save(ConfigurationSaveMode.Modified);
         ConfigurationManager.RefreshSection("appSettings");
 
-
         //await Auth.SetProfileNumber();     
-        
-        AppData.InitializeDatabase();
-
-        await ProgramsClass.AddPrograms(KeyStuff.GetInstalledProgramSubkeys());
 
 
     }

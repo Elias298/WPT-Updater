@@ -38,7 +38,6 @@ internal class ProgramsClass
 
 
     public static AppData dbhelper = new AppData();
-    public static Dictionary<string, ProgramsClass> ProgramsDict = new();
     public static List<string> OutdatedPrograms = new List<string>();
 
 
@@ -50,37 +49,54 @@ internal class ProgramsClass
 
 
     //method to add 1 program given it's subkey
-    public static async Task GetProgramInfo(string subkeyPath)
+    public static async Task AddProgram(string subkeyPath)
     {
 
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
 
         // Get program details
+        var (programName, installedVersion, installDateString) = GetLocalInfo(subkeyPath);
+        
+        var program = new ProgramsClass()
+        {
+            ProgramKey = subkeyPath,
+            ProgramName = programName,
+            InstalledVersion = installedVersion,
+            InstallDate = installDateString,
+            Hidden = 0,
+            CheckBetas = 0
+        };
+        await dbhelper.SyncNewProgram(program);
+        //sync with UI
+        
+    }
+
+    public static (string,string,string) GetLocalInfo(string subkeyPath)
+    {
+        using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
+
+        // Get program details
         string? programName = subKey?.GetValue("DisplayName") as string;
+        if (string.IsNullOrEmpty(programName))
+        {
+            programName = "N.A";
+        }
         string? installedVersion = subKey?.GetValue("DisplayVersion") as string;
+        if (string.IsNullOrEmpty(installedVersion))
+        {
+            installedVersion = "??.?";
+        }
         string? installDateString = subKey?.GetValue("InstallDate") as string;
         if (string.IsNullOrEmpty(installDateString))
         {
             installDateString = "--------";
         }
-        if (!string.IsNullOrEmpty(programName))
-        {
-            var program = new ProgramsClass()
-            {
-                ProgramKey = subkeyPath,
-                ProgramName = programName,
-                InstalledVersion = installedVersion,
-                InstallDate = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8],
-                Hidden = 0,
-                CheckBetas = 0
-            };
-            ProgramsDict.Add(subkeyPath, program);
-            await dbhelper.SyncNewProgram(program);
-            //sync with UI
-        }
+        installDateString = installDateString[0..4] + "/" + installDateString[4..6] + "/" + installDateString[6..8];
+
+        return (programName, installedVersion, installDateString);
     }
 
-    
+
 
     //method to update an added program
     public async Task EditProgramInfo(
@@ -115,21 +131,26 @@ internal class ProgramsClass
     public async Task RemoveProgram()
     {
         await dbhelper.SyncRemoveProgram(ProgramKey);
-        ProgramsDict.Remove(ProgramKey);
         //sync with UI
     }
 
 
+    public async Task RefreshLocal()
+    {
+        var (programname, installedversion, installdate) = GetLocalInfo(this.ProgramKey);
+        await this.EditProgramInfo(programName: programname, installedVersion: installedversion, installDate: installdate);
+    }
+
+
+
     public async Task CheckLatestVersion()
     {
+        await this.RefreshLocal();
         var webprogram = new WebScraping(this);
         await webprogram.CheckVersion();
+        await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage);
 
-        if (string.IsNullOrEmpty(OfficialPage) || string.IsNullOrEmpty(DownloadPage))
-        {
-            await this.EditProgramInfo(officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage); }
-
-        if (webprogram.LatestVersion != InstalledVersion || (string.IsNullOrEmpty(webprogram.LatestVersion) && string.IsNullOrEmpty(InstalledVersion)))
+        /*if (webprogram.LatestVersion != InstalledVersion || (string.IsNullOrEmpty(webprogram.LatestVersion) && string.IsNullOrEmpty(InstalledVersion)))
         {
             await this.EditProgramInfo(latestVersion: webprogram.LatestVersion);
             OutdatedPrograms.Add(ProgramKey);
@@ -137,8 +158,23 @@ internal class ProgramsClass
         else
         {
             await this.EditProgramInfo(downloadLink: "installed"); 
-        }
+        }*/
     }
+
+    /*
+    public async Task RefreshProgram()
+    {
+        await this.RefreshLocal();
+        if (LatestVersion != InstalledVersion)
+        {
+             
+        }
+        else
+        {
+            await this.EditProgramInfo(downloadLink: "installed");
+        }
+        
+    }*/
 
     public async Task FetchUpdate()
     {
@@ -154,6 +190,7 @@ internal class ProgramsClass
 
     public static async Task FetchUpdates(List<string> keyslist)
     {
+        var ProgramsDict = dbhelper.GetAllPrograms();
         foreach (string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
@@ -164,7 +201,8 @@ internal class ProgramsClass
 
     public static async Task CheckLatestVersions(List<string> keyslist)
     {
-        foreach(string key in keyslist)
+        var ProgramsDict = dbhelper.GetAllPrograms();
+        foreach (string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
             if (program.Hidden == 0)
@@ -176,6 +214,7 @@ internal class ProgramsClass
 
     public static async Task Removeprograms(List<string> keyslist)
     {
+        var ProgramsDict = dbhelper.GetAllPrograms();
         foreach (string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
@@ -191,7 +230,7 @@ internal class ProgramsClass
     {
         foreach (string key in keyslist)
         {
-            await GetProgramInfo(key);
+            await AddProgram(key);
         }
     }
 

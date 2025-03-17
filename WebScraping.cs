@@ -50,6 +50,15 @@ internal class WebScraping
         CheckBetas = program.CheckBetas;
     }
 
+    public static ChromeOptions Seloptions()
+    {
+        var options = new ChromeOptions();
+        options.AddArgument("--headless=new");
+        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
+        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
+        return options;
+
+    }
 
     public async Task CheckVersion()
     {
@@ -152,12 +161,7 @@ internal class WebScraping
 
     public static async Task<List<string>> FirstWebResults(string searchQuery, int n)
     {
-        // Initialize ChromeDriver
-        var options = new ChromeOptions();
-        //options.AddArgument("--headless=new");
-        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
-        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
-        IWebDriver driver = new ChromeDriver(options);
+        IWebDriver driver = new ChromeDriver(Seloptions());
 
         try
         {
@@ -218,12 +222,7 @@ internal class WebScraping
 
     public static async Task<string> GetPageSourceSel(string url)
     {
-        var options = new ChromeOptions();
-        //options.AddArgument("--headless=new");
-        options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
-        options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}"); // Change to "Default" or your profile name
-
-        using (IWebDriver driver = new ChromeDriver(options))
+        using (IWebDriver driver = new ChromeDriver(Seloptions()))
         {
             driver.Navigate().GoToUrl(url);
             var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
