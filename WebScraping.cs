@@ -40,7 +40,7 @@ internal class WebScraping
     public WebScraping(ProgramsClass program)
     {
 
-        ProgramName = Regex.Replace(program.ProgramName, @"\b\d+(\.\d+)+\b", "");
+        ProgramName = program.ProgramName;
         InstalledVersion = program.InstalledVersion;
         LatestVersion = program.LatestVersion;
         OfficialPage = program.OfficialPage;
@@ -124,6 +124,8 @@ internal class WebScraping
 
 
         string latestversion = points.OrderByDescending(kv => kv.Value).First().Key;
+
+        //find version page as well this.VersionPage=...
         this.LatestVersion = latestversion;
     }
 

@@ -16,8 +16,6 @@ internal class Launch
         bool firstrundone;
         bool.TryParse(ConfigurationManager.AppSettings["Firstrundone"], out firstrundone);
 
-        
-
         // 1st use initialization:
         if (!firstrundone) { await DoFirstTimeStuff(); }
         else 

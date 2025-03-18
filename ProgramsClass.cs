@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using System.IO;
 using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
+using System.Text.RegularExpressions;
 
 namespace WPT_Updater;
 
@@ -60,7 +61,7 @@ internal class ProgramsClass
         var program = new ProgramsClass()
         {
             ProgramKey = subkeyPath,
-            ProgramName = programName,
+            ProgramName = Regex.Replace(programName, @"\b\d+(\.\d+)+\b", ""),
             InstalledVersion = installedVersion,
             InstallDate = installDateString,
             Hidden = 0,
@@ -135,56 +136,54 @@ internal class ProgramsClass
     }
 
 
+    public string? downloadedfilestr()
+    {
+        return Directory.GetFiles(Installer.DownloadPath)
+            .FirstOrDefault(file => Path.GetFileName(file).Contains(ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1)));
+    }
+
     public async Task RefreshLocal()
     {
         var (programname, installedversion, installdate) = GetLocalInfo(this.ProgramKey);
         await this.EditProgramInfo(programName: programname, installedVersion: installedversion, installDate: installdate);
+
+        string? downloadfile = this.downloadedfilestr();
+
+        if ((InstalledVersion == LatestVersion && downloadfile != null) || (Hidden==1 && downloadfile != null))
+        {
+            File.Delete(downloadfile);
+        }
+
+    }
+
+    public async Task RefreshLocals(List<string> keyslist)
+    {
+        var ProgramsDict = dbhelper.GetAllPrograms();
+        foreach (string key in keyslist)
+        {
+            var program = ProgramsDict[key];
+            if (program.Hidden == 0)
+            {
+                await program.RefreshLocal();
+            }
+        }
     }
 
 
 
     public async Task CheckLatestVersion()
     {
-        await this.RefreshLocal();
         var webprogram = new WebScraping(this);
         await webprogram.CheckVersion();
-        await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage);
-
-        /*if (webprogram.LatestVersion != InstalledVersion || (string.IsNullOrEmpty(webprogram.LatestVersion) && string.IsNullOrEmpty(InstalledVersion)))
-        {
-            await this.EditProgramInfo(latestVersion: webprogram.LatestVersion);
-            OutdatedPrograms.Add(ProgramKey);
-        }
-        else
-        {
-            await this.EditProgramInfo(downloadLink: "installed"); 
-        }*/
+        await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, versionPage:webprogram.VersionPage , officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage);
     }
 
-    /*
-    public async Task RefreshProgram()
-    {
-        await this.RefreshLocal();
-        if (LatestVersion != InstalledVersion)
-        {
-             
-        }
-        else
-        {
-            await this.EditProgramInfo(downloadLink: "installed");
-        }
-        
-    }*/
 
     public async Task FetchUpdate()
     {
-        
-        if(this.DownloadLink != "installed")
-        {
-            var webprogram = new WebScraping(this);
-            await webprogram.FetchUpdate();
-            await this.EditProgramInfo(versionPage: webprogram.VersionPage,downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
-        }
+        var webprogram = new WebScraping(this);
+        await webprogram.FetchUpdate();
+        await this.EditProgramInfo(downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
     }
 
 
@@ -194,7 +193,11 @@ internal class ProgramsClass
         foreach (string key in keyslist)
         {
             ProgramsClass program = ProgramsDict[key];
-            await program.FetchUpdate();
+            var file = program.downloadedfilestr();
+            if (program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
+            {
+                await program.FetchUpdate();
+            }
         }
     }
 
@@ -234,18 +237,6 @@ internal class ProgramsClass
         }
     }
 
-    /*public static List<ProgramsClass> CheckOutdatedPrograms()
-    {
-        List<ProgramsClass> outdatedprograms = new();
-        foreach (ProgramsClass program in ProgramsDict.Values)
-        {
-            if (program.InstalledVersion != program.LatestVersion && program.Hidden == 0)
-            {
-                outdatedprograms.Add(program);
-            }
-        }
-        return outdatedprograms;
-    }*/
 
 }
 

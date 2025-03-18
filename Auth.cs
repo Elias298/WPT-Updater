@@ -60,14 +60,13 @@ namespace WPT_Updater
             }
         }
 
-        public static async Task SetProfileNumber()
+        public static async Task SetProfileNumber(int profilenumber=1)
         {
             await Task.Delay(0);
             //display profiles using GetProfiles()
             //user inputs profile number
-            string profilenumber = "1"; //example
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings["Profile"].Value = profilenumber;
+            config.AppSettings.Settings["Profile"].Value = profilenumber.ToString();
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
         }

@@ -7,7 +7,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 namespace WPT_Updater;
 
-internal static class Program
+internal class Program
 {
     /// <summary>
     ///  The main entry point for the application.
@@ -23,8 +23,11 @@ internal static class Program
         //Application.Run(new Form1());
 
 
-        await Launch.Start();
-
-
+        //await Launch.Start();
+        var sevenz = ProgramsClass.dbhelper.GetAllPrograms()["SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip"];
+        var dwnld = new Installer(sevenz);
+        Console.WriteLine(sevenz);
+        Console.WriteLine(dwnld.Path);
+        await dwnld.Start();
     }
 }
