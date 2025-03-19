@@ -25,9 +25,9 @@ internal class Program
 
         //await Launch.Start();
         var sevenz = ProgramsClass.dbhelper.GetAllPrograms()["SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip"];
-        var dwnld = new Installer(sevenz);
-        Console.WriteLine(sevenz);
-        Console.WriteLine(dwnld.Path);
-        await dwnld.Start();
+        var downloadManager = new Installer(4);
+        await downloadManager.DownloadFileAsync("https://www.7-zip.org/a/7z2409-x64.exe", """C:\Users\Elias\Desktop\lol\7z ip.exe""");
+        await downloadManager.DownloadFileAsync("https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-710fr.exe", """C:\Users\Elias\Desktop\lol\winrar.exe""");
+        //await downloadManager.DownloadFileAsync("https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251654_7ed26d28139143f38c58992680c214a5", """C:\Users\Elias\Desktop\lol\java.exe""");
     }
 }

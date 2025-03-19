@@ -39,7 +39,7 @@ internal class ProgramsClass
 
 
     public static AppData dbhelper = new AppData();
-    public static List<string> OutdatedPrograms = new List<string>();
+    public static Installer downloader = new Installer(10);
 
 
     // Override ToString for easy debugging
@@ -138,7 +138,7 @@ internal class ProgramsClass
 
     public string? downloadedfilestr()
     {
-        return Directory.GetFiles(Installer.DownloadPath)
+        return Directory.GetFiles(Installer2.DownloadPath)
             .FirstOrDefault(file => Path.GetFileName(file).Contains(ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1)));
     }
 
@@ -149,9 +149,10 @@ internal class ProgramsClass
 
         string? downloadfile = this.downloadedfilestr();
 
-        if ((InstalledVersion == LatestVersion && downloadfile != null) || (Hidden==1 && downloadfile != null))
+        if ((InstalledVersion == LatestVersion && downloadfile != null) )
         {
             File.Delete(downloadfile);
+
         }
 
     }
@@ -186,6 +187,27 @@ internal class ProgramsClass
         await this.EditProgramInfo(downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
     }
 
+    public async Task DownloadUpdate()
+    {
+        if (!string.IsNullOrEmpty(DownloadLink))
+        {
+            var filename = DownloadLink.Substring(DownloadLink.LastIndexOf('/') + 1);
+            int dot = filename.IndexOf('.');
+            if (dot != -1)
+            {
+                var path = Installer.DownloadPath + filename.Substring(0, dot) + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + filename.Substring(dot);
+                await downloader.DownloadFileAsync(DownloadLink, path);
+            }
+            else
+            {
+                string ext = "bin"; //get file extension using metadata
+                var path = Installer.DownloadPath + ProgramName + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + "." + ext;
+                await downloader.DownloadFileAsync(DownloadLink, path);
+            }
+             
+        }
+    }
+
 
     public static async Task FetchUpdates(List<string> keyslist)
     {
@@ -194,7 +216,7 @@ internal class ProgramsClass
         {
             ProgramsClass program = ProgramsDict[key];
             var file = program.downloadedfilestr();
-            if (program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
+            if ( !string.IsNullOrEmpty(program.LatestVersion) && program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
             {
                 await program.FetchUpdate();
             }
@@ -211,6 +233,20 @@ internal class ProgramsClass
             if (program.Hidden == 0)
             {
                 await program.CheckLatestVersion();
+            }
+        }
+    }
+
+    public static async Task DownloadUpdates(List<string> keyslist)
+    {
+        var ProgramsDict = dbhelper.GetAllPrograms();
+        foreach (string key in keyslist)
+        {
+            ProgramsClass program = ProgramsDict[key];
+            var file = program.downloadedfilestr();
+            if (program.Hidden==0)
+            {
+                await program.DownloadUpdate();
             }
         }
     }
