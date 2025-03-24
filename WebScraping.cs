@@ -73,61 +73,57 @@ internal class WebScraping
         else { Urls.Add(VersionPage); }
 
         List<List<string>> pagesversions = new();
-        foreach(string url in Urls)
+        foreach (string url in Urls)
         {
             var urlsource = await GetPageSource(url);
             pagesversions.Add(ScanForVersions(urlsource));
         }
-        
+
         List<string> allversions = pagesversions.SelectMany(sublist => sublist).ToList();
         Dictionary<string, int> points = allversions.Distinct().ToDictionary(x => x, x => 0);
-        //Console.WriteLine(string.Join(" ", points.Keys.ToList()));
 
         Func<string, int> GetPoints = version => version.Count(c => c == '.');
 
         if (!string.IsNullOrEmpty(InstalledVersion))
         {
-            int Format = GetPoints(InstalledVersion);
-
-            foreach (string version in points.Keys.ToList())
+            // Compare Installed Version using Version class
+            if (Version.TryParse(InstalledVersion, out Version installedVersionObj))
             {
-                int format = GetPoints(version);
-                if (format == Format)
+                foreach (string version in points.Keys.ToList())
                 {
-                    points[version] += 20;
-                }
-                else if (Math.Abs(format-Format)==1)
-                {
-                    points[version] += 10;
-                }
-                else
-                {
-                    points.Remove(version);
+                    if (Version.TryParse(version, out Version scrapedVersionObj))
+                    {
+                        // Compare versions directly using CompareTo()
+                        if (scrapedVersionObj.CompareTo(installedVersionObj) > 0)
+                        {
+                            points[version] += 20;  // Newer versions get higher points
+                        }
+                        else if (scrapedVersionObj.CompareTo(installedVersionObj) == 0)
+                        {
+                            points[version] += 10;  // Same version gets moderate points
+                        }
+                        else
+                        {
+                            points[version] += 5;   // Older versions get the lowest points
+                        }
+                    }
                 }
             }
-            
-
         }
 
+        // Sort versions using Version class to ensure proper ordering
+        var sortedVersions = points.Keys
+                                    .Select(version => new Version(version))
+                                    .OrderByDescending(version => version)  // Sort by version, descending order (latest first)
+                                    .Select(version => version.ToString())
+                                    .ToList();
 
-        //get list of top 3 most recurring items with their count, use top3[i].Value and top3[i].Count
-        /* var top3 = allversions
-            .GroupBy(n => n)                   
-            .OrderByDescending(g => g.Count())
-            .Take(3)                            
-            .Select(g => new { Value = g.Key, Count = g.Count() })
-            .ToList();
+        string latestversion = sortedVersions.First();  // The latest version is the first item in the sorted list
 
-        points[top3[0].Value] += 15;
-        points[top3[1].Value] += 10;
-        points[top3[2].Value] += 5;*/
-
-
-        string latestversion = points.OrderByDescending(kv => kv.Value).First().Key;
-
-        //find version page as well this.VersionPage=...
+        // Find version page as well this.VersionPage = ...
         this.LatestVersion = latestversion;
     }
+
 
     public async Task GetOfficialPage()
     {
@@ -140,6 +136,83 @@ internal class WebScraping
         List<string> downloadpage = await FirstWebResults($"{ProgramName} official download", 1);
         this.DownloadPage = downloadpage[0];
     }
+
+    public async Task GetDownloadLink()
+    {
+        // Ensure that the VersionPage or DownloadPage is not null
+        if (string.IsNullOrEmpty(VersionPage) && string.IsNullOrEmpty(DownloadPage))
+        {
+            Console.WriteLine("No version or download page available to fetch the download link.");
+            return;
+        }
+
+        List<string> urlsToCheck = new List<string>();
+
+        // Use the VersionPage if it's available
+        if (!string.IsNullOrEmpty(VersionPage))
+        {
+            urlsToCheck.Add(VersionPage);
+        }
+        // Use the DownloadPage if it's available
+        if (!string.IsNullOrEmpty(DownloadPage))
+        {
+            urlsToCheck.Add(DownloadPage);
+        }
+
+        string latestDownloadLink = string.Empty;
+
+        // Loop through all URLs and attempt to find the download link
+        foreach (string url in urlsToCheck)
+        {
+            string pageSource = await GetPageSource(url);
+
+            // Check if pageSource is not empty before proceeding
+            if (!string.IsNullOrEmpty(pageSource))
+            {
+                // Extract download links by scanning the page for common download patterns
+                var downloadLinks = ExtractDownloadLinks(pageSource);
+
+                if (downloadLinks.Any())
+                {
+                    // Assign the latest download link (first found, assuming it's the latest version)
+                    latestDownloadLink = downloadLinks.First();
+                    break; // Exit loop once we found a valid download link
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(latestDownloadLink))
+        {
+            this.DownloadLink = latestDownloadLink;
+            Console.WriteLine($"Download link for the latest version: {this.DownloadLink}");
+        }
+        else
+        {
+            Console.WriteLine("No download link found for the latest version.");
+        }
+    }
+
+    // Helper method to extract download links from the page source
+    private List<string> ExtractDownloadLinks(string pageSource)
+    {
+        List<string> downloadLinks = new List<string>();
+
+
+        Regex downloadLinkPattern = new Regex(@"(?:href|src)=[\'\""]((https?|ftp):\/\/[^\s\'\""]+)[\'\""]", RegexOptions.IgnoreCase);
+
+
+        foreach (Match match in downloadLinkPattern.Matches(pageSource))
+        {
+            string link = match.Groups[1].Value;
+            if (link.Contains("download") || link.Contains("installer") || link.EndsWith(".exe") || link.EndsWith(".dmg"))
+            {
+                downloadLinks.Add(link);
+            }
+        }
+
+        return downloadLinks;
+    }
+
 
     public async Task FetchUpdate()
     {
@@ -218,7 +291,7 @@ internal class WebScraping
             versions.Add(match.Value);
         }
         return versions;
-        
+
     }
 
 
@@ -240,7 +313,7 @@ internal class WebScraping
             string pagesource = await client.GetStringAsync(url);
             return pagesource;
         }
-        
+
     }
 
     public static async Task<string> GetPageSource(string url)
