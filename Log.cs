@@ -16,5 +16,10 @@ public static class Log
         string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}";
         File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
     }
+    public static void Write(string message)
+    {
+        string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}";
+        File.AppendAllText(logFilePath, logMessage);
+    }
 }
 

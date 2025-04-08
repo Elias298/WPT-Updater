@@ -71,6 +71,7 @@ internal class AppData
     // Initialize the database (create table if it doesn't exist)
     public static void InitializeDatabase()
     {
+        Log.WriteLine("(Re)initializing database");
         File.Delete(DbPath);
         using (var connection = new SQLiteConnection($"Data Source={DbPath}"))
         {
@@ -90,52 +91,57 @@ internal class AppData
                             Hidden INT
                         )");
         }
+        Log.WriteLine("Database initialized");
     }
 
     //Add a program in the databse
     public async Task SyncNewProgram(ProgramsClass program)
     {
+        Log.WriteLine($"Adding {program.ProgramName} to database");
         using (var connection = new SQLiteConnection(connectionString))
         {
             await connection.ExecuteAsync(insertQuery, program);
         }
+        Log.WriteLine($"{program.ProgramName} succesfully added");
 
     }
 
 
     //Edit program info
-    public async Task SyncEditedInfo(string ProgramKey)
+    public async Task SyncEditedInfo(ProgramsClass program)
     {
-        var ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
-        ProgramsClass program = ProgramsDict[ProgramKey];
+        Log.WriteLine($"Syncing {program.ProgramName} new info with database");
         using (var connection = new SQLiteConnection(connectionString))
         {
             await connection.ExecuteAsync(UpdateQuery, program);
         }
+        Log.WriteLine($"{program.ProgramName} info succesfully synced");
     }
 
 
     //Remove a program
-    public async Task SyncRemoveProgram(string programKey)
+    public async Task SyncRemoveProgram(ProgramsClass program)
     {
-        var ProgramsDict = ProgramsClass.dbhelper.GetAllPrograms();
-        ProgramsClass program = ProgramsDict[programKey];
+        Log.WriteLine($"Removing {program.ProgramName} from database");
         using (var connection = new SQLiteConnection(connectionString))
         {
             await connection.ExecuteAsync(DeleteQuery, program);
         }
+        Log.WriteLine($"{program.ProgramName} removed from database");
     }
 
     // Retrieve all programs from the database
     public Dictionary<string, ProgramsClass> GetAllPrograms()
     {
+        Log.WriteLine("Retreiving programs from database");
         using (var connection = new SQLiteConnection(connectionString))
         {
-            connection.Open();
+            //connection.Open();
             // Execute the query and map the results to a list of ProgramsClass objects
             var programsDictionary = connection
                 .Query<ProgramsClass>(selectQuery)
                 .ToDictionary(p => p.ProgramKey);
+            Log.WriteLine("programs successfully added to dictionary");
             return programsDictionary!;
         }
     }

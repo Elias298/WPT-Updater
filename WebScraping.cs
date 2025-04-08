@@ -53,9 +53,11 @@ internal class WebScraping
     public static ChromeOptions Seloptions()
     {
         var options = new ChromeOptions();
-        options.AddArgument("--headless=new");
+        //options.AddArgument("--headless=new");
         options.AddArgument($"--user-data-dir=C:\\Users\\{Auth.UserName}\\AppData\\Local\\Google\\Chrome\\User Data");
         options.AddArgument($"--profile-directory=Profile {Auth.ProfileNumber}");
+        options.AddArgument("--disable-blink-features=AutomationControlled");
+        options.AddExcludedArgument("enable-automation");
         return options;
 
     }
@@ -250,10 +252,10 @@ internal class WebScraping
 
             // Wait for the results to load asynchronously
             var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            await Task.Run(() => wait.Until(d => d.FindElement(By.CssSelector("div.g"))));
+            await Task.Run(() => wait.Until(d => d.FindElement(By.CssSelector("div.tF2Cxc"))));
 
             // Find all search result links (excluding ads)
-            var searchResults = driver.FindElements(By.CssSelector("div.g:not(.uEierd):not(.commercial-unit-desktop-top) a")); // Exclude ads
+            var searchResults = driver.FindElements(By.CssSelector("div.tF2Cxc a")); // Exclude ads
 
             // Extract the first n links (ignoring ads)
             List<string> links = new List<string>();
@@ -342,6 +344,27 @@ internal class WebScraping
             }
         }
     }
+
+
+    public static async Task GPTdriver(string query)
+    {
+        await Task.Delay(0);
+        using (IWebDriver driver = new ChromeDriver(Seloptions()))
+        {
+            driver.Navigate().GoToUrl("https://chatgpt.com/");
+
+            IWebElement inputBox = driver.FindElement(By.ClassName("placeholder"));
+            inputBox.SendKeys(query + OpenQA.Selenium.Keys.Enter);
+
+            Thread.Sleep(10000);
+
+            var messages = driver.FindElements(By.CssSelector("div.markdown"));
+            string lastMessage = messages[^1].Text;
+            Console.WriteLine("ChatGPT's Response: " + lastMessage);
+        }
+
+    }
+
 
 
 

@@ -37,7 +37,7 @@ internal class ProgramsClass
     //bool attribute
     public int? Hidden { get; set; }
 
-
+    public static Dictionary<string,ProgramsClass> AllPrograms = new();
     public static AppData dbhelper = new AppData();
     public static Installer downloader = new Installer(10);
 
@@ -52,11 +52,25 @@ internal class ProgramsClass
     //method to add 1 program given it's subkey
     public static async Task AddProgram(string subkeyPath)
     {
-
-        using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
+        if (AllPrograms.ContainsKey(subkeyPath))
+        {
+            return;
+        }
 
         // Get program details
         var (programName, installedVersion, installDateString) = GetLocalInfo(subkeyPath);
+        if (installedVersion=="??.?")
+        {
+            Log.WriteLine($"No version found for {programName}, not added");
+            return;
+        }
+
+        if (programName=="N.A")
+        {
+            Log.WriteLine($"No program name found for key {subkeyPath}");
+            return;
+        }
+
         
         var program = new ProgramsClass()
         {
@@ -67,6 +81,8 @@ internal class ProgramsClass
             Hidden = 0,
             CheckBetas = 0
         };
+        Log.WriteLine($"{program.ProgramName} object was created");
+        AllPrograms[subkeyPath] = program;
         await dbhelper.SyncNewProgram(program);
         //sync with UI
         
@@ -74,8 +90,8 @@ internal class ProgramsClass
 
     public static (string,string,string) GetLocalInfo(string subkeyPath)
     {
+        Log.WriteLine($"Fetching registry info for {subkeyPath}");
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
-
         // Get program details
         string? programName = subKey?.GetValue("DisplayName") as string;
         if (string.IsNullOrEmpty(programName))
@@ -112,18 +128,50 @@ internal class ProgramsClass
                               int? hidden = null,
                               int? checkbetas = null)
     {
-        if (programName != null) { ProgramName = programName; }
-        if (installedVersion != null) { InstalledVersion = installedVersion; }
-        if (installDate != null) { InstallDate = installDate; }
-        if (latestVersion != null) { LatestVersion = latestVersion; }
-        if (officialPage != null) { OfficialPage = officialPage; }
-        if (versionPage != null) { VersionPage = versionPage; }
-        if (downloadPage != null) { DownloadPage = downloadPage; }
-        if (downloadLink != null) { DownloadLink = downloadLink; }
-        if (hidden != null) { Hidden = hidden; }
-        if (checkbetas != null){ CheckBetas = checkbetas; }
+        Log.WriteLine($"Editing {ProgramName}:");
+        if (programName != null){
+            Log.Write($"{ProgramName} --> {programName} ; ");
+            ProgramName = programName;}
 
-        await dbhelper.SyncEditedInfo(ProgramKey);
+        if (installedVersion != null){
+            Log.Write($"{InstalledVersion} --> {installedVersion} ; ");
+            InstalledVersion = installedVersion;}
+
+        if (installDate != null){
+            Log.Write($"{InstallDate} --> {installDate} ; ");
+            InstallDate = installDate;}
+
+        if (latestVersion != null){
+            Log.Write($"{LatestVersion} --> {latestVersion} ; ");
+            LatestVersion = latestVersion;}
+
+        if (officialPage != null){
+            Log.Write($"{OfficialPage} --> {officialPage} ; ");
+            OfficialPage = officialPage;}
+
+        if (versionPage != null){
+            Log.Write($"{VersionPage} --> {versionPage} ; ");
+            VersionPage = versionPage;}
+
+        if (downloadPage != null){
+            Log.Write($"{DownloadPage} --> {downloadPage} ; ");
+            DownloadPage = downloadPage;}
+
+        if (downloadLink != null){
+            Log.Write($"{DownloadLink} --> {downloadLink} ; ");
+            DownloadLink = downloadLink;}
+
+        if (hidden != null){
+            Log.Write($"{Hidden} --> {hidden} ; ");
+            Hidden = hidden;}
+
+        if (checkbetas != null){
+            Log.Write($"{CheckBetas} --> {checkbetas} ; ");
+            CheckBetas = checkbetas;}
+
+        Log.WriteLine("");
+
+        await dbhelper.SyncEditedInfo(this);
         //sync with UI
 
     }
@@ -131,19 +179,29 @@ internal class ProgramsClass
 
     public async Task RemoveProgram()
     {
-        await dbhelper.SyncRemoveProgram(ProgramKey);
+        await dbhelper.SyncRemoveProgram(this);
+        AllPrograms.Remove(this.ProgramKey);
+        Log.WriteLine($"{this.ProgramName} was removed from the database");
         //sync with UI
     }
 
 
     public string? downloadedfilestr()
     {
-        return Directory.GetFiles(Installer2.DownloadPath)
+        string? filename = Directory.GetFiles(Installer.DownloadPath)
             .FirstOrDefault(file => Path.GetFileName(file).Contains(ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1)));
+        if (!string.IsNullOrEmpty(filename))
+        {
+            Log.WriteLine($" Found file '{filename}' for {ProgramName}");
+        }
+        
+        return filename;
+
     }
 
     public async Task RefreshLocal()
     {
+        Log.WriteLine($"Refreshing {ProgramName}:");
         var (programname, installedversion, installdate) = GetLocalInfo(this.ProgramKey);
         await this.EditProgramInfo(programName: programname, installedVersion: installedversion, installDate: installdate);
 
@@ -152,6 +210,7 @@ internal class ProgramsClass
         if ((InstalledVersion == LatestVersion && downloadfile != null) )
         {
             File.Delete(downloadfile);
+            Log.WriteLine($"Deleted file'{downloadfile}' for {this.ProgramName}");
 
         }
 
@@ -159,10 +218,10 @@ internal class ProgramsClass
 
     public async Task RefreshLocals(List<string> keyslist)
     {
-        var ProgramsDict = dbhelper.GetAllPrograms();
-        foreach (string key in keyslist)
+        Log.WriteLine("Refreshing:");
+        foreach (string key in AllPrograms.Keys)
         {
-            var program = ProgramsDict[key];
+            var program = AllPrograms[key];
             if (program.Hidden == 0)
             {
                 await program.RefreshLocal();
@@ -174,21 +233,26 @@ internal class ProgramsClass
 
     public async Task CheckLatestVersion()
     {
+        Log.WriteLine($"Version checking for {ProgramName} started:");
         var webprogram = new WebScraping(this);
         await webprogram.CheckVersion();
         await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, versionPage:webprogram.VersionPage , officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage);
+        Log.WriteLine($"Version checking done for {ProgramName}");
     }
 
 
     public async Task FetchUpdate()
     {
+        Log.WriteLine($"Fetching update for {ProgramName} started:");
         var webprogram = new WebScraping(this);
         await webprogram.FetchUpdate();
         await this.EditProgramInfo(downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
+        Log.WriteLine($"Fetching update done for {ProgramName}");
     }
 
     public async Task DownloadUpdate()
     {
+        Log.WriteLine($"Starting update download for {ProgramName}:");
         if (!string.IsNullOrEmpty(DownloadLink))
         {
             var filename = DownloadLink.Substring(DownloadLink.LastIndexOf('/') + 1);
@@ -197,24 +261,27 @@ internal class ProgramsClass
             {
                 var path = Installer.DownloadPath + filename.Substring(0, dot) + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + filename.Substring(dot);
                 await downloader.DownloadFileAsync(DownloadLink, path);
+                Log.WriteLine($"download of {DownloadLink} started in {path}");
             }
             else
             {
                 string ext = "bin"; //get file extension using metadata
                 var path = Installer.DownloadPath + ProgramName + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + "." + ext;
                 await downloader.DownloadFileAsync(DownloadLink, path);
+                Log.WriteLine($"download of {DownloadLink} started in {path} (no extension found)");
             }
              
         }
+        else { Log.WriteLine($"No download link found for {ProgramName}"); }
     }
 
 
     public static async Task FetchUpdates(List<string> keyslist)
     {
-        var ProgramsDict = dbhelper.GetAllPrograms();
-        foreach (string key in keyslist)
+        Log.WriteLine("Fetching updates:");
+        foreach (string key in AllPrograms.Keys)
         {
-            ProgramsClass program = ProgramsDict[key];
+            ProgramsClass program = AllPrograms[key];
             var file = program.downloadedfilestr();
             if ( !string.IsNullOrEmpty(program.LatestVersion) && program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
             {
@@ -226,10 +293,10 @@ internal class ProgramsClass
 
     public static async Task CheckLatestVersions(List<string> keyslist)
     {
-        var ProgramsDict = dbhelper.GetAllPrograms();
-        foreach (string key in keyslist)
+        Log.WriteLine("Checking latest versions:");
+        foreach (string key in AllPrograms.Keys)
         {
-            ProgramsClass program = ProgramsDict[key];
+            ProgramsClass program = AllPrograms[key];
             if (program.Hidden == 0)
             {
                 await program.CheckLatestVersion();
@@ -239,11 +306,10 @@ internal class ProgramsClass
 
     public static async Task DownloadUpdates(List<string> keyslist)
     {
-        var ProgramsDict = dbhelper.GetAllPrograms();
-        foreach (string key in keyslist)
+        Log.WriteLine("Starting updates downloads:");
+        foreach (string key in AllPrograms.Keys)
         {
-            ProgramsClass program = ProgramsDict[key];
-            var file = program.downloadedfilestr();
+            ProgramsClass program = AllPrograms[key];
             if (program.Hidden==0)
             {
                 await program.DownloadUpdate();
@@ -253,10 +319,10 @@ internal class ProgramsClass
 
     public static async Task Removeprograms(List<string> keyslist)
     {
-        var ProgramsDict = dbhelper.GetAllPrograms();
-        foreach (string key in keyslist)
+        Log.WriteLine("Removing programs:");
+        foreach (string key in AllPrograms.Keys)
         {
-            ProgramsClass program = ProgramsDict[key];
+            ProgramsClass program = AllPrograms[key];
             await program.RemoveProgram();
         }
     }
@@ -267,6 +333,7 @@ internal class ProgramsClass
     //method to add programs from a given keylist
     public static async Task AddPrograms(List<string> keyslist)
     {
+        Log.WriteLine("Adding programs:");
         foreach (string key in keyslist)
         {
             await AddProgram(key);
@@ -291,14 +358,17 @@ internal class KeyStuff
             @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
         ];
 
+        Log.WriteLine("Getting registry keys:");
         foreach (var registryPath in registryPaths)
         {
             using RegistryKey? key = Registry.LocalMachine.OpenSubKey(registryPath);
+            Log.WriteLine($"in {registryPath}:");
             if (key != null)
             {
                 foreach (string subKeyName in key.GetSubKeyNames())
                 {
                     subkeys.Add($"{registryPath}\\{subKeyName}");
+                    Log.WriteLine($"Found: {registryPath}\\{subKeyName}");
                     
                 }
             }

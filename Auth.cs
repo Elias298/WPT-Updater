@@ -17,9 +17,11 @@ namespace WPT_Updater
 
         public static List<string> GetProfiles()
         {
+            Log.WriteLine($"Trying to find chrome profiles");
             List<string> profilelist = new();
             string localStatePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                                              "Google", "Chrome", "User Data", "Local State");
+            Log.WriteLine($"From {localStatePath}");
 
             if (!File.Exists(localStatePath))
             {
@@ -35,12 +37,11 @@ namespace WPT_Updater
                 // Ensure profile key exists
                 if (jsonObj?["profile"]?["info_cache"] is not JObject profiles)
                 {
-                    Log.WriteLine("lol");
+                    Log.WriteLine("Profile key doesn't exist");
                     return profilelist;
                 }
 
-                Console.WriteLine("Chrome Profiles:");
-
+                Log.WriteLine("Chrome Profiles:");
                 
                 foreach (var profile in profiles.Properties())
                 {
@@ -48,8 +49,10 @@ namespace WPT_Updater
                     if (!string.IsNullOrEmpty(profileName))
                     {
                         profilelist.Add(profileName);
+                        Log.Write($"{profileName} , ");
                     }
                 }
+                Log.WriteLine("");
                 return profilelist;
 
             }
@@ -60,22 +63,23 @@ namespace WPT_Updater
             }
         }
 
-        public static async Task SetProfileNumber(int profilenumber=1)
+        public static void SetProfileNumber(int profilenumber=1)
         {
-            await Task.Delay(0);
-            //display profiles using GetProfiles()
-            //user inputs profile number
+            Log.WriteLine($"setting profile number to {profilenumber}");
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             config.AppSettings.Settings["Profile"].Value = profilenumber.ToString();
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
+            Log.WriteLine($"Profile number set to {profilenumber}");
         }
 
         public static int GetProfileNumber()
         {
+            Log.WriteLine("finding profile number in config");
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             int profile;
             int.TryParse(ConfigurationManager.AppSettings["Profile"], out profile);
+            Log.WriteLine($"profile number {profile} will be used for selenium");
             return profile;
         }
 
