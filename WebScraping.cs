@@ -140,80 +140,66 @@ internal class WebScraping
     }
 
     public async Task GetDownloadLink()
+{
+    if (string.IsNullOrEmpty(VersionPage) && string.IsNullOrEmpty(DownloadPage))
     {
-        // Ensure that the VersionPage or DownloadPage is not null
-        if (string.IsNullOrEmpty(VersionPage) && string.IsNullOrEmpty(DownloadPage))
+        Console.WriteLine("No version or download page available to fetch the download link.");
+        return;
+    }
+
+    List<string> urlsToCheck = new List<string>();
+    if (!string.IsNullOrEmpty(VersionPage)) urlsToCheck.Add(VersionPage);
+    if (!string.IsNullOrEmpty(DownloadPage)) urlsToCheck.Add(DownloadPage);
+
+    string latestDownloadLink = string.Empty;
+    string? version = this.LatestVersion;
+
+    foreach (string url in urlsToCheck)
+    {
+        string pageSource = await GetPageSource(url);
+        if (!string.IsNullOrEmpty(pageSource))
         {
-            Console.WriteLine("No version or download page available to fetch the download link.");
-            return;
-        }
+            var downloadLinks = new List<string>();
 
-        List<string> urlsToCheck = new List<string>();
-
-        // Use the VersionPage if it's available
-        if (!string.IsNullOrEmpty(VersionPage))
-        {
-            urlsToCheck.Add(VersionPage);
-        }
-        // Use the DownloadPage if it's available
-        if (!string.IsNullOrEmpty(DownloadPage))
-        {
-            urlsToCheck.Add(DownloadPage);
-        }
-
-        string latestDownloadLink = string.Empty;
-
-        // Loop through all URLs and attempt to find the download link
-        foreach (string url in urlsToCheck)
-        {
-            string pageSource = await GetPageSource(url);
-
-            // Check if pageSource is not empty before proceeding
-            if (!string.IsNullOrEmpty(pageSource))
+            if (!string.IsNullOrEmpty(version))
             {
-                // Extract download links by scanning the page for common download patterns
-                var downloadLinks = ExtractDownloadLinks(pageSource);
-
-                if (downloadLinks.Any())
+                // Prioritize links that include the latest version in the filename
+                Regex versionedPattern = new Regex($@"https:\/\/[^\s\'\""]*{Regex.Escape(version)}[^\s\'\""]*\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
+                foreach (Match match in versionedPattern.Matches(pageSource))
                 {
-                    // Assign the latest download link (first found, assuming it's the latest version)
-                    latestDownloadLink = downloadLinks.First();
-                    break; // Exit loop once we found a valid download link
+                    downloadLinks.Add(match.Value);
                 }
             }
-        }
 
-        if (!string.IsNullOrEmpty(latestDownloadLink))
-        {
-            this.DownloadLink = latestDownloadLink;
-            Console.WriteLine($"Download link for the latest version: {this.DownloadLink}");
-        }
-        else
-        {
-            Console.WriteLine("No download link found for the latest version.");
-        }
-    }
-
-    // Helper method to extract download links from the page source
-    private List<string> ExtractDownloadLinks(string pageSource)
-    {
-        List<string> downloadLinks = new List<string>();
-
-
-        Regex downloadLinkPattern = new Regex(@"(?:href|src)=[\'\""]((https?|ftp):\/\/[^\s\'\""]+)[\'\""]", RegexOptions.IgnoreCase);
-
-
-        foreach (Match match in downloadLinkPattern.Matches(pageSource))
-        {
-            string link = match.Groups[1].Value;
-            if (link.Contains("download") || link.Contains("installer") || link.EndsWith(".exe") || link.EndsWith(".dmg"))
+            // If no versioned links were found, fall back to general download pattern
+            if (!downloadLinks.Any())
             {
-                downloadLinks.Add(link);
+                Regex fallbackPattern = new Regex(@"https:\/\/[^\s\'\""]+\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
+                foreach (Match match in fallbackPattern.Matches(pageSource))
+                {
+                    downloadLinks.Add(match.Value);
+                }
+            }
+
+            if (downloadLinks.Any())
+            {
+                latestDownloadLink = downloadLinks.First();
+                break;
             }
         }
-
-        return downloadLinks;
     }
+
+    if (!string.IsNullOrEmpty(latestDownloadLink))
+    {
+        this.DownloadLink = latestDownloadLink;
+        Console.WriteLine($"Download link for the latest version: {this.DownloadLink}");
+    }
+    else
+    {
+        Console.WriteLine("No download link found for the latest version.");
+    }
+}
+
 
 
     public async Task FetchUpdate()
