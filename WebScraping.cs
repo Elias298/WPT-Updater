@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-
+using HtmlAgilityPack;
 
 using System;
 using System.Collections.Generic;
@@ -21,6 +21,9 @@ using static OpenQA.Selenium.BiDi.Modules.Network.UrlPattern;
 using System.Diagnostics;
 using System.ComponentModel.Design.Serialization;
 using System.Collections;
+using static OpenQA.Selenium.BiDi.Modules.BrowsingContext.InnerTextLocator;
+using OpenQA.Selenium.BiDi.Modules.Script;
+using OpenQA.Selenium.BiDi.Modules.Input;
 
 
 namespace WPT_Updater;
@@ -29,7 +32,7 @@ internal class WebScraping
 {
     //attributes from ProgramsClass
     public string? ProgramName { get; set; }
-    public string? InstalledVersion { get; set; } = "";
+    public string InstalledVersionstr { get; set; }
 
     public string? LatestVersion { get; set; }
     public string? OfficialPage { get; set; }
@@ -39,9 +42,8 @@ internal class WebScraping
     public int? CheckBetas { get; set; }
     public WebScraping(ProgramsClass program)
     {
-
+        InstalledVersionstr = program.InstalledVersion;
         ProgramName = program.ProgramName;
-        InstalledVersion = program.InstalledVersion;
         LatestVersion = program.LatestVersion;
         OfficialPage = program.OfficialPage;
         VersionPage = program.VersionPage;
@@ -64,6 +66,7 @@ internal class WebScraping
 
     public async Task CheckVersion()
     {
+        //Gather all useful links
         List<string> Urls = new List<string>();
         if (string.IsNullOrEmpty(OfficialPage)) { await this.GetOfficialPage(); }
         if (!string.IsNullOrEmpty(OfficialPage)) { Urls.Add(OfficialPage); }
@@ -74,56 +77,143 @@ internal class WebScraping
         if (string.IsNullOrEmpty(VersionPage)) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
         else { Urls.Add(VersionPage); }
 
-        List<List<string>> pagesversions = new();
-        foreach (string url in Urls)
+        //Beta/alpha keywords:
+        List<string> BetaKeywords = new List<string>
+        {"alpha","beta","rc","pre-","pre release","-b","b-",
+        "preview","test","testing","unstable","experimental",
+        "early access","canary","nightly","snapshot","debug",
+        "draft","staging","revision","rev","demo","test","night"};
+
+        //Helper functions:
+        /*Regex CreateRegex(string version)
         {
-            var urlsource = await GetPageSource(url);
-            pagesversions.Add(ScanForVersions(urlsource));
+            int dots = version.Count(f => f == '.');
+            if (dots == 1) { return new Regex(@"(?<!\.)\d+\.\d+(?!\.)"); }
+            if (dots == 2) { return new Regex(@"(?<!\.)\d+\.\d+\.\d+(?!\.)"); }
+            else { return new Regex(@"(?<!\.)\d+\.\d+\.\d+\.\d+(?!\.)"); }
+        }*/
+
+        int GetFormat(Version version)
+        {
+            if (version.Revision != -1) { return 4; }
+            else if(version.Build != -1){ return 3; }
+            else { return 2; }
         }
 
-        List<string> allversions = pagesversions.SelectMany(sublist => sublist).ToList();
-        Dictionary<string, int> points = allversions.Distinct().ToDictionary(x => x, x => 0);
-
-        Func<string, int> GetPoints = version => version.Count(c => c == '.');
-
-        if (!string.IsNullOrEmpty(InstalledVersion))
+        string GetOwnText(HtmlNode node)
         {
-            // Compare Installed Version using Version class
-            if (Version.TryParse(InstalledVersion, out Version installedVersionObj))
+            return string.Concat(node.ChildNodes
+                .Where(n => n.NodeType == HtmlNodeType.Text)
+                .Select(n => n.InnerText));
+        }
+        bool TryGetRegex(string node, Regex regex, out string? ver)
+        {
+            ver = null;
+            var match = regex.Match(node);
+            if (!match.Success) { return false; }
+
+            var next = match.NextMatch();
+            if (!next.Success)
             {
-                foreach (string version in points.Keys.ToList())
+                ver = match.ToString();
+                return true;
+            }
+            return false;
+        }
+
+
+
+        //Regex regex = CreateRegex(InstalledVersionstr);
+        Regex regex = new Regex(@"(?<!\.)\d+(?:\.\d+){1,3}(?!\.)");
+
+        int totalmatches = 0;
+        Dictionary<Version,(bool,float,string)> results = new();
+        Version InstalledVersion = Version.Parse(InstalledVersionstr);
+        //create other lists
+
+        foreach (string url in Urls)
+        {
+            var source = await GetPageSource(url);
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            doc.LoadHtml(source);
+
+            foreach (var node in doc.DocumentNode.Descendants())
+            {
+
+                if (node.NodeType != HtmlNodeType.Element)
+                    continue;
+                string ownText = GetOwnText(node);
+
+                if (TryGetRegex(ownText, regex, out string? a))
                 {
-                    if (Version.TryParse(version, out Version scrapedVersionObj))
+                    
+                    totalmatches += 1;
+                    string ver = a!;
+                    Version version = Version.Parse(ver);
+                    if (version <= InstalledVersion || version.Major>=InstalledVersion.Major*10) { continue; }
+
+                    string regexstring = regex.ToString();
+                    var specificwords = new List<string> { regexstring+"b", "b"+regexstring, regexstring + "a", "a" + regexstring };
+                    var betakeywords = BetaKeywords;
+                    betakeywords.AddRange(specificwords);
+
+                    bool containsbeta = betakeywords.Any(s => ownText.Contains(s));
+                    bool beta = false;
+                    if (containsbeta) {beta = true;}
+
+                    if (results.ContainsKey(version))
                     {
-                        // Compare versions directly using CompareTo()
-                        if (scrapedVersionObj.CompareTo(installedVersionObj) > 0)
-                        {
-                            points[version] += 20;  // Newer versions get higher points
-                        }
-                        else if (scrapedVersionObj.CompareTo(installedVersionObj) == 0)
-                        {
-                            points[version] += 10;  // Same version gets moderate points
-                        }
-                        else
-                        {
-                            points[version] += 5;   // Older versions get the lowest points
-                        }
+                        bool currentbeta = (results[version]).Item1;
+                        var currentcount = (results[version]).Item2;
+                        string website = (results[version]).Item3;
+
+                        if (beta) { results[version]=( true,currentcount+1, website ); }
+                        else { results[version] = ( currentbeta,currentcount+1, website ); }
+                    }
+                    else
+                    {
+                        results[version] = (beta , 0, url);
                     }
                 }
             }
+
+        }
+        
+        //Console.WriteLine(string.Join(" ",results.Keys.ToList()));
+
+        if (results.Count == 0)
+        {
+            this.LatestVersion = InstalledVersion.ToString();
+            return;
         }
 
-        // Sort versions using Version class to ensure proper ordering
-        var sortedVersions = points.Keys
-                                    .Select(version => new Version(version))
-                                    .OrderByDescending(version => version)  // Sort by version, descending order (latest first)
-                                    .Select(version => version.ToString())
-                                    .ToList();
+        foreach (Version ver in results.Keys.ToList())
+        {
+            if (results[ver].Item1 != (CheckBetas == 1)) { results.Remove(ver); }
+        }
 
-        string latestversion = sortedVersions.First();  // The latest version is the first item in the sorted list
+        List < Version > versionstrie = results.Keys.ToList();
+        versionstrie.Sort();
 
-        // Find version page as well this.VersionPage = ...
+        float matchesratio = 100 / totalmatches;
+        float i = totalmatches;
+        foreach (Version version in versionstrie)
+        {
+            i = i / 2;
+            bool beta = results[version].Item1;
+            float count = results[version].Item2;
+            string website = results[version].Item3;
+            if (GetFormat(version) != GetFormat(InstalledVersion)){ count = count / 2; } //remove points if format doesnt match
+
+            //final points
+            results[version] = (beta, (count * matchesratio)*i, website);
+        }
+
+        var maxItem = results.MaxBy(kv => kv.Value.Item2);
+        Version max = maxItem.Key;
+        string latestversion = max.ToString();
         this.LatestVersion = latestversion;
+        this.VersionPage = results[max].Item3;
     }
 
 
@@ -165,7 +255,7 @@ internal class WebScraping
             {
                 // Prioritize links that include the latest version in the filename
                 Regex versionedPattern = new Regex($@"https:\/\/[^\s\'\""]*{Regex.Escape(version)}[^\s\'\""]*\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
-                foreach (Match match in versionedPattern.Matches(pageSource))
+                foreach (System.Text.RegularExpressions.Match match in versionedPattern.Matches(pageSource))
                 {
                     downloadLinks.Add(match.Value);
                 }
@@ -175,7 +265,7 @@ internal class WebScraping
             if (!downloadLinks.Any())
             {
                 Regex fallbackPattern = new Regex(@"https:\/\/[^\s\'\""]+\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
-                foreach (Match match in fallbackPattern.Matches(pageSource))
+                foreach (System.Text.RegularExpressions.Match match in fallbackPattern.Matches(pageSource))
                 {
                     downloadLinks.Add(match.Value);
                 }
@@ -209,12 +299,10 @@ internal class WebScraping
         //start from this.DownloadPage
         //if nothing found recursively check daughter pages or other "download pages" from google search
         //code
-        string versionpage = "https://.....";
         string downloadlink = "https://.....";
         string downloadpage = "https://.....";
 
 
-        this.VersionPage = versionpage;
         this.DownloadLink = downloadlink;
         this.DownloadPage = downloadpage;
     }
@@ -248,7 +336,7 @@ internal class WebScraping
             int count = 0;
             foreach (var result in searchResults)
             {
-                string href = result.GetAttribute("href");
+                string? href = result.GetAttribute("href");
                 if (!string.IsNullOrEmpty(href) && !href.Contains("googleadservices.com")) // Additional ad filtering
                 {
                     links.Add(href);
@@ -267,20 +355,6 @@ internal class WebScraping
     }
 
 
-
-    public static List<string> ScanForVersions(string source)
-    {
-
-        List<string> versions = new();
-        Regex versionRegex = new(@"\b\d+(\.\d+)+\b");
-
-        foreach (Match match in versionRegex.Matches(source))
-        {
-            versions.Add(match.Value);
-        }
-        return versions;
-
-    }
 
 
     public static async Task<string> GetPageSourceSel(string url)
