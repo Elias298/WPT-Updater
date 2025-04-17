@@ -255,7 +255,7 @@ internal class WebScraping
             {
                 // Prioritize links that include the latest version in the filename
                 Regex versionedPattern = new Regex($@"https:\/\/[^\s\'\""]*{Regex.Escape(version)}[^\s\'\""]*\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
-                foreach (Match match in versionedPattern.Matches(pageSource))
+                foreach (System.Text.RegularExpressions.Match match in versionedPattern.Matches(pageSource))
                 {
                     downloadLinks.Add(match.Value);
                 }
@@ -265,7 +265,7 @@ internal class WebScraping
             if (!downloadLinks.Any())
             {
                 Regex fallbackPattern = new Regex(@"https:\/\/[^\s\'\""]+\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
-                foreach (Match match in fallbackPattern.Matches(pageSource))
+                foreach (System.Text.RegularExpressions.Match match in fallbackPattern.Matches(pageSource))
                 {
                     downloadLinks.Add(match.Value);
                 }
