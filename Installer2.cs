@@ -19,7 +19,7 @@ public class Installer
     {
         var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         string? path = ConfigurationManager.AppSettings["DownloadPath"];
-        if (path == null) { return ""; }
+        if (string.IsNullOrEmpty(path)) { return Directory.GetCurrentDirectory(); }
         return path;
     }
 

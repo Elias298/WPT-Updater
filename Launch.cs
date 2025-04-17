@@ -30,6 +30,7 @@ internal class Launch
             Log.WriteLine("Not first run");
         }
 
+
         if (!File.Exists(AppData.DbPath))
         {
             Log.WriteLine("No database found");
@@ -38,16 +39,24 @@ internal class Launch
 
         ProgramsClass.AllPrograms = ProgramsClass.dbhelper.GetAllPrograms();
 
+        var installed_programs = KeyStuff.GetInstalledProgramSubkeys();
+        foreach(string programkey in ProgramsClass.AllPrograms.Keys.ToList())
+        {
+            if (!installed_programs.Contains(programkey))
+            {
+                var program = ProgramsClass.AllPrograms[programkey];
+                await program.RemoveProgram();
+            }
+        }
+
         foreach(var process in Process.GetProcessesByName("chrome"))
         {
             process.Kill();
         }
 
+        await ProgramsClass.RefreshLocals(ProgramsClass.AllPrograms.Keys.ToList());
 
-
-        //await ProgramsClass.CheckLatestVersions(ProgramsClass.ProgramsDict.Keys.ToList());
-
-        //await ProgramsClass.FetchUpdates(ProgramsClass.OutdatedPrograms);
+        //await ProgramsClass.CheckLatestVersions(ProgramsClass.AllPrograms.Keys.ToList());
 
 
     }

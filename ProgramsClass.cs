@@ -20,7 +20,7 @@ internal class ProgramsClass
 
     public required string ProgramKey { get; set; }
     public required string ProgramName { get; set; }
-    public string? InstalledVersion { get; set; } = "";
+    public string InstalledVersion { get; set; } = "";
     public string? InstallDate { get; set; }
 
     //require web search attributes
@@ -75,7 +75,7 @@ internal class ProgramsClass
         var program = new ProgramsClass()
         {
             ProgramKey = subkeyPath,
-            ProgramName = Regex.Replace(programName, @"\b\d+(\.\d+)+\b", ""),
+            ProgramName = programName,
             InstalledVersion = installedVersion,
             InstallDate = installDateString,
             Hidden = 0,
@@ -92,16 +92,23 @@ internal class ProgramsClass
     {
         Log.WriteLine($"Fetching registry info for {subkeyPath}");
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
+
         // Get program details
-        string? programName = subKey?.GetValue("DisplayName") as string;
-        if (string.IsNullOrEmpty(programName))
+
+        var programName = "N.A";
+        string? capturedprogramName = subKey?.GetValue("DisplayName") as string;
+        if (!string.IsNullOrEmpty(capturedprogramName))
         {
-            programName = "N.A";
+            programName = Regex.Replace(capturedprogramName, @"\b\d+(\.\d+)+\b", "");
         }
-        string? installedVersion = subKey?.GetValue("DisplayVersion") as string;
-        if (string.IsNullOrEmpty(installedVersion))
+
+        string? capturedversion = subKey?.GetValue("DisplayVersion") as string;
+        string installedVersion = "??.?";
+        if (!string.IsNullOrEmpty(capturedversion)) 
         {
-            installedVersion = "??.?";
+            var parts = capturedversion.Split(".");
+            var trimmed = parts.Take(4);
+            installedVersion = string.Join(".", trimmed);
         }
         string? installDateString = subKey?.GetValue("InstallDate") as string;
         if (string.IsNullOrEmpty(installDateString))
@@ -216,7 +223,7 @@ internal class ProgramsClass
 
     }
 
-    public async Task RefreshLocals(List<string> keyslist)
+    public static async Task RefreshLocals(List<string> keyslist)
     {
         Log.WriteLine("Refreshing:");
         foreach (string key in AllPrograms.Keys)
@@ -375,4 +382,16 @@ internal class KeyStuff
         }
         return subkeys;
     }
+
+    public static Dictionary<string,string> GetInstalledProgramNames()
+    {
+        var allkeys = GetInstalledProgramSubkeys();
+        Dictionary<string, string> names = new();
+        foreach(var key in allkeys)
+        {
+            names[key] = ProgramsClass.GetLocalInfo(key).Item1;
+        }
+        return names;
+    }
+
 }
