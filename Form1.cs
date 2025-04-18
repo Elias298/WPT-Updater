@@ -18,8 +18,15 @@ namespace WPT_Updater
 
         private async void Form1_Load(object sender, EventArgs e)
         {
+            if (!File.Exists(AppData.DbPath))
+            {
+                Log.WriteLine("No database found");
+                AppData.InitializeDatabase();
+            }
+
             LoadGridData();
             dataGridView1.CellMouseClick += dataGridView1_CellMouseClick; // Hook right-click event
+
             await Launch.Start();
         }
 

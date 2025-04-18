@@ -31,35 +31,26 @@ internal class Launch
         }
 
 
-        if (!File.Exists(AppData.DbPath))
-        {
-            Log.WriteLine("No database found");
-            AppData.InitializeDatabase();
-        }
-
-        ProgramsClass.AllPrograms = ProgramsClass.dbhelper.GetAllPrograms();
-        Console.WriteLine(string.Join("nigga",ProgramsClass.AllPrograms));
-        Console.WriteLine(AppData.DbPath);
-
+        List<ProgramsClass> AddedPrograms = ProgramsClass.dbhelper.GetAllPrograms();
         var installed_programs = KeyStuff.GetInstalledProgramSubkeys();
 
-        foreach(string programkey in ProgramsClass.AllPrograms.Keys.ToList())
+        /*foreach(ProgramsClass program in AddedPrograms)
         {
-            if (!installed_programs.Contains(programkey))
+            if (!installed_programs.Contains(program.ProgramKey))
             {
-                var program = ProgramsClass.AllPrograms[programkey];
                 await program.RemoveProgram();
+                AddedPrograms.Remove(program);
             }
-        }
+        }*/
         
         foreach(var process in Process.GetProcessesByName("chrome"))
         {
             process.Kill();
         }
 
-        await ProgramsClass.RefreshLocals(ProgramsClass.AllPrograms.Keys.ToList());
-        await ProgramsClass.CheckLatestVersions(ProgramsClass.AllPrograms.Keys.ToList());
-
+        await ProgramsClass.RefreshLocals(AddedPrograms);
+        await ProgramsClass.CheckLatestVersions(AddedPrograms);
+        //await ProgramsClass.FetchUpdates(AddedPrograms);
 
     }
 
@@ -73,7 +64,6 @@ internal class Launch
         config.Save(ConfigurationSaveMode.Modified);
         ConfigurationManager.RefreshSection("appSettings");
         Log.WriteLine("First run marked as done");
-        AppData.InitializeDatabase();
         //await Installer2.SetDownloadPath();
         //await Auth.SetProfileNumber();     
 

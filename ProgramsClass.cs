@@ -32,12 +32,11 @@ internal class ProgramsClass
 
     //authentication attributes
     public int? CheckBetas { get; set; }
-    public string? _password { get; set; }
 
     //bool attribute
     public int? Hidden { get; set; }
 
-    public static Dictionary<string,ProgramsClass> AllPrograms = new();
+    //public static Dictionary<string,ProgramsClass> AllPrograms = new();
     public static AppData dbhelper = new AppData();
     public static Installer downloader = new Installer(10);
 
@@ -52,10 +51,6 @@ internal class ProgramsClass
     //method to add 1 program given it's subkey
     public static async Task AddProgram(string subkeyPath)
     {
-        if (AllPrograms.ContainsKey(subkeyPath))
-        {
-            return;
-        }
 
         // Get program details
         var (programName, installedVersion, installDateString) = GetLocalInfo(subkeyPath);
@@ -82,7 +77,6 @@ internal class ProgramsClass
             CheckBetas = 0
         };
         Log.WriteLine($"{program.ProgramName} object was created");
-        AllPrograms[subkeyPath] = program;
         await dbhelper.SyncNewProgram(program);
         //sync with UI
         
@@ -187,7 +181,6 @@ internal class ProgramsClass
     public async Task RemoveProgram()
     {
         await dbhelper.SyncRemoveProgram(this);
-        AllPrograms.Remove(this.ProgramKey);
         Log.WriteLine($"{this.ProgramName} was removed from the database");
         //sync with UI
     }
@@ -223,12 +216,11 @@ internal class ProgramsClass
 
     }
 
-    public static async Task RefreshLocals(List<string> keyslist)
+    public static async Task RefreshLocals(List<ProgramsClass> programslist)
     {
         Log.WriteLine("Refreshing:");
-        foreach (string key in AllPrograms.Keys)
+        foreach (ProgramsClass program in programslist)
         {
-            var program = AllPrograms[key];
             if (program.Hidden == 0)
             {
                 await program.RefreshLocal();
@@ -283,12 +275,11 @@ internal class ProgramsClass
     }
 
 
-    public static async Task FetchUpdates(List<string> keyslist)
+    public static async Task FetchUpdates(List<ProgramsClass> programslist)
     {
         Log.WriteLine("Fetching updates:");
-        foreach (string key in AllPrograms.Keys)
+        foreach (ProgramsClass program in programslist)
         {
-            ProgramsClass program = AllPrograms[key];
             var file = program.downloadedfilestr();
             if ( !string.IsNullOrEmpty(program.LatestVersion) && program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
             {
@@ -298,12 +289,11 @@ internal class ProgramsClass
     }
 
 
-    public static async Task CheckLatestVersions(List<string> keyslist)
+    public static async Task CheckLatestVersions(List<ProgramsClass> programslist)
     {
         Log.WriteLine("Checking latest versions:");
-        foreach (string key in AllPrograms.Keys)
+        foreach (ProgramsClass program in programslist)
         {
-            ProgramsClass program = AllPrograms[key];
             if (program.Hidden == 0)
             {
                 await program.CheckLatestVersion();
@@ -311,12 +301,11 @@ internal class ProgramsClass
         }
     }
 
-    public static async Task DownloadUpdates(List<string> keyslist)
+    public static async Task DownloadUpdates(List<ProgramsClass> programslist)
     {
         Log.WriteLine("Starting updates downloads:");
-        foreach (string key in AllPrograms.Keys)
+        foreach (ProgramsClass program in programslist)
         {
-            ProgramsClass program = AllPrograms[key];
             if (program.Hidden==0)
             {
                 await program.DownloadUpdate();
@@ -324,12 +313,11 @@ internal class ProgramsClass
         }
     }
 
-    public static async Task Removeprograms(List<string> keyslist)
+    public static async Task Removeprograms(List<ProgramsClass> programslist)
     {
         Log.WriteLine("Removing programs:");
-        foreach (string key in AllPrograms.Keys)
+        foreach (ProgramsClass program in programslist)
         {
-            ProgramsClass program = AllPrograms[key];
             await program.RemoveProgram();
         }
     }

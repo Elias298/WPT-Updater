@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -14,8 +15,10 @@ internal class AppData
     public static string DbPath = Installer.DownloadPath+"\\Programs.db";
     private readonly string connectionString = $"Data Source={DbPath}";
     public readonly string selectQuery = "SELECT * FROM Programs;";
+
+
     public readonly string insertQuery = @"
-            INSERT INTO Programs (
+                INSERT OR IGNORE INTO Programs (
                 ProgramKey,
                 ProgramName,
                 InstalledVersion,
@@ -26,10 +29,9 @@ internal class AppData
                 DownloadPage,
                 DownloadLink,
                 CheckBetas,
-                _password,
                 Hidden
-            )
-            VALUES (
+                )
+                VALUES (
                 @ProgramKey,
                 @ProgramName,
                 @InstalledVersion,
@@ -40,9 +42,9 @@ internal class AppData
                 @DownloadPage,
                 @DownloadLink,
                 @CheckBetas,
-                @_password,
                 @Hidden
-            );";
+                );
+            ";
 
     public readonly string UpdateQuery = @"
                 UPDATE Programs
@@ -56,7 +58,6 @@ internal class AppData
                     DownloadPage = @DownloadPage,
                     DownloadLink = @DownloadLink,
                     CheckBetas = @CheckBetas,
-                    _password = @_password,
                     Hidden = @Hidden
                 WHERE
                     ProgramKey = @ProgramKey;";
@@ -87,7 +88,6 @@ internal class AppData
                             DownloadPage TEXT,
                             DownloadLink TEXT,
                             CheckBetas INT,
-                            _password TEXT,
                             Hidden INT
                         )");
         }
@@ -131,23 +131,20 @@ internal class AppData
     }
 
     // Retrieve all programs from the database
-    public Dictionary<string, ProgramsClass> GetAllPrograms()
+    public List<ProgramsClass> GetAllPrograms()
     {
         Log.WriteLine("Retreiving programs from database");
         using (var connection = new SQLiteConnection(connectionString))
         {
             //connection.Open();
             // Execute the query and map the results to a list of ProgramsClass objects
-            var programsDictionary = connection
+            var programsList = connection
                 .Query<ProgramsClass>(selectQuery)
-                .ToDictionary(p => p.ProgramKey);
-            Log.WriteLine("programs successfully added to dictionary");
-            return programsDictionary!;
+                .ToList();
+            Log.WriteLine("programs successfully added to list");
+            return programsList;
         }
     }
-
-
-
 
 
 }

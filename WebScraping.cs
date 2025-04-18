@@ -77,6 +77,8 @@ internal class WebScraping
         if (string.IsNullOrEmpty(VersionPage)) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
         else { Urls.Add(VersionPage); }
 
+        Urls = Urls.Distinct().ToList();
+
         //Beta/alpha keywords:
         List<string> BetaKeywords = new List<string>
         {"alpha","beta","rc","pre-","pre release","-b","b-",
@@ -129,7 +131,7 @@ internal class WebScraping
         int totalmatches = 0;
         Dictionary<Version,(bool,float,string)> results = new();
         Version InstalledVersion = Version.Parse(InstalledVersionstr);
-        //create other lists
+        string? firstPage = null;
 
         foreach (string url in Urls)
         {
@@ -150,7 +152,11 @@ internal class WebScraping
                     totalmatches += 1;
                     string ver = a!;
                     Version version = Version.Parse(ver);
-                    if (version <= InstalledVersion || version.Major>=InstalledVersion.Major*10) { continue; }
+                    if (version <= InstalledVersion || version.Major>=InstalledVersion.Major*10)
+                    {
+                        if ((version == InstalledVersion) && firstPage==null) {firstPage = url;}
+                        continue;
+                    }
 
                     string regexstring = regex.ToString();
                     var specificwords = new List<string> { regexstring+"b", "b"+regexstring, regexstring + "a", "a" + regexstring };
@@ -179,11 +185,11 @@ internal class WebScraping
 
         }
         
-        //Console.WriteLine(string.Join(" ",results.Keys.ToList()));
 
         if (results.Count == 0)
         {
             this.LatestVersion = InstalledVersion.ToString();
+            this.VersionPage = firstPage;
             return;
         }
 
@@ -229,7 +235,7 @@ internal class WebScraping
         this.DownloadPage = downloadpage[0];
     }
 
-    public async Task GetDownloadLink()
+    public async Task FetchUpdate()
 {
     if (string.IsNullOrEmpty(VersionPage) && string.IsNullOrEmpty(DownloadPage))
     {
@@ -292,24 +298,7 @@ internal class WebScraping
 
 
 
-    public async Task FetchUpdate()
-    {
-        await Task.Delay(1);
-
-        //start from this.DownloadPage
-        //if nothing found recursively check daughter pages or other "download pages" from google search
-        //code
-        string downloadlink = "https://.....";
-        string downloadpage = "https://.....";
-
-
-        this.DownloadLink = downloadlink;
-        this.DownloadPage = downloadpage;
-    }
-
-
-
-
+    
     public static async Task<List<string>> FirstWebResults(string searchQuery, int n)
     {
         IWebDriver driver = new ChromeDriver(Seloptions());
