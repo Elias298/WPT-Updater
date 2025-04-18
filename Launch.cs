@@ -38,8 +38,11 @@ internal class Launch
         }
 
         ProgramsClass.AllPrograms = ProgramsClass.dbhelper.GetAllPrograms();
+        Console.WriteLine(string.Join("nigga",ProgramsClass.AllPrograms));
+        Console.WriteLine(AppData.DbPath);
 
         var installed_programs = KeyStuff.GetInstalledProgramSubkeys();
+
         foreach(string programkey in ProgramsClass.AllPrograms.Keys.ToList())
         {
             if (!installed_programs.Contains(programkey))
@@ -48,15 +51,14 @@ internal class Launch
                 await program.RemoveProgram();
             }
         }
-
+        
         foreach(var process in Process.GetProcessesByName("chrome"))
         {
             process.Kill();
         }
 
         await ProgramsClass.RefreshLocals(ProgramsClass.AllPrograms.Keys.ToList());
-
-        //await ProgramsClass.CheckLatestVersions(ProgramsClass.AllPrograms.Keys.ToList());
+        await ProgramsClass.CheckLatestVersions(ProgramsClass.AllPrograms.Keys.ToList());
 
 
     }

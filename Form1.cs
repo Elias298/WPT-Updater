@@ -16,10 +16,11 @@ namespace WPT_Updater
             InitializeComponent();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
             LoadGridData();
             dataGridView1.CellMouseClick += dataGridView1_CellMouseClick; // Hook right-click event
+            await Launch.Start();
         }
 
         private void LoadGridData()
@@ -32,7 +33,7 @@ namespace WPT_Updater
         private List<GridClass> GetInstalledProgramsFromDatabase()
         {
             var programs = new List<GridClass>();
-            string connectionString = "Data Source=Programs.db";
+            string connectionString = "Data Source="+AppData.DbPath;
 
             using (var connection = new SQLiteConnection(connectionString))
             {

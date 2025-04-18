@@ -11,7 +11,7 @@ namespace WPT_Updater;
 
 internal class AppData
 {
-    public static string DbPath = Installer.DownloadPath+"Programs.db";
+    public static string DbPath = Installer.DownloadPath+"\\Programs.db";
     private readonly string connectionString = $"Data Source={DbPath}";
     public readonly string selectQuery = "SELECT * FROM Programs;";
     public readonly string insertQuery = @"
