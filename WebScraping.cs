@@ -86,14 +86,6 @@ internal class WebScraping
         "early access","canary","nightly","snapshot","debug",
         "draft","staging","revision","rev","demo","test","night"};
 
-        //Helper functions:
-        /*Regex CreateRegex(string version)
-        {
-            int dots = version.Count(f => f == '.');
-            if (dots == 1) { return new Regex(@"(?<!\.)\d+\.\d+(?!\.)"); }
-            if (dots == 2) { return new Regex(@"(?<!\.)\d+\.\d+\.\d+(?!\.)"); }
-            else { return new Regex(@"(?<!\.)\d+\.\d+\.\d+\.\d+(?!\.)"); }
-        }*/
 
         int GetFormat(Version version)
         {
@@ -184,6 +176,14 @@ internal class WebScraping
             }
 
         }
+
+        if (CheckBetas == 0)
+        {
+            foreach (Version ver in results.Keys.ToList())
+            {
+                if (results[ver].Item1) { results.Remove(ver); }
+            }
+        }
         
 
         if (results.Count == 0)
@@ -191,11 +191,6 @@ internal class WebScraping
             this.LatestVersion = InstalledVersion.ToString();
             this.VersionPage = firstPage;
             return;
-        }
-
-        foreach (Version ver in results.Keys.ToList())
-        {
-            if (results[ver].Item1 != (CheckBetas == 1)) { results.Remove(ver); }
         }
 
         List < Version > versionstrie = results.Keys.ToList();

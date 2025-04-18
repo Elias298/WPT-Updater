@@ -102,7 +102,10 @@ internal class ProgramsClass
         {
             var parts = capturedversion.Split(".");
             var trimmed = parts.Take(4);
-            installedVersion = string.Join(".", trimmed);
+            string smaller = string.Join(".", trimmed);
+            installedVersion = smaller;
+            Version parsed = Version.Parse(smaller);
+            installedVersion = parsed.ToString();
         }
         string? installDateString = subKey?.GetValue("InstallDate") as string;
         if (string.IsNullOrEmpty(installDateString))

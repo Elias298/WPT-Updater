@@ -34,14 +34,14 @@ internal class Launch
         List<ProgramsClass> AddedPrograms = ProgramsClass.dbhelper.GetAllPrograms();
         var installed_programs = KeyStuff.GetInstalledProgramSubkeys();
 
-        /*foreach(ProgramsClass program in AddedPrograms)
+        foreach(ProgramsClass program in AddedPrograms)
         {
             if (!installed_programs.Contains(program.ProgramKey))
             {
                 await program.RemoveProgram();
                 AddedPrograms.Remove(program);
             }
-        }*/
+        }
         
         foreach(var process in Process.GetProcessesByName("chrome"))
         {
@@ -50,7 +50,7 @@ internal class Launch
 
         await ProgramsClass.RefreshLocals(AddedPrograms);
         await ProgramsClass.CheckLatestVersions(AddedPrograms);
-        //await ProgramsClass.FetchUpdates(AddedPrograms);
+        await ProgramsClass.FetchUpdates(AddedPrograms);
 
     }
 

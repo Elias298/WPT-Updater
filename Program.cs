@@ -13,21 +13,26 @@ internal class Program
     ///  The main entry point for the application.
     /// </summary>
     [STAThread]
-    static async Task Main()
+    static void Main()
     {
-        await Task.Delay(1);
+
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
 
-        //ApplicationConfiguration.Initialize();
-        //Application.Run(new Form1());
+
+        /*List<string> programs = new();
+        programs.Add("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Docker Desktop");
+        programs.Add("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\WinRAR archiver");
+        programs.Add("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Git_is1");
+        programs.Add("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Notepad++");
+        programs.Add("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip");
+        awaitProgramsClass.AddPrograms(programs);*/
+
+        ApplicationConfiguration.Initialize();
+        Application.Run(new Form1());
 
 
-        //await Launch.Start();
-        var sevenz = ProgramsClass.dbhelper.GetAllPrograms()["SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\7-Zip"];
-        var downloadManager = new Installer(4);
-        await downloadManager.DownloadFileAsync("https://www.7-zip.org/a/7z2409-x64.exe", """C:\Users\Elias\Desktop\lol\7z ip.exe""");
-        await downloadManager.DownloadFileAsync("https://www.win-rar.com/fileadmin/winrar-versions/winrar/winrar-x64-710fr.exe", """C:\Users\Elias\Desktop\lol\winrar.exe""");
-        //await downloadManager.DownloadFileAsync("https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251654_7ed26d28139143f38c58992680c214a5", """C:\Users\Elias\Desktop\lol\java.exe""");
+
+
     }
 }
