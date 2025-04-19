@@ -8,6 +8,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace WPT_Updater;
 
@@ -252,7 +253,7 @@ internal class ProgramsClass
         Log.WriteLine($"Fetching update done for {ProgramName}");
     }
 
-    public async Task DownloadUpdate()
+    public async Task DownloadUpdate(IProgress<float> progress)
     {
         Log.WriteLine($"Starting update download for {ProgramName}:");
         if (!string.IsNullOrEmpty(DownloadLink))
@@ -261,21 +262,53 @@ internal class ProgramsClass
             int dot = filename.IndexOf('.');
             if (dot != -1)
             {
-                var path = Installer.DownloadPath + filename.Substring(0, dot) + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + filename.Substring(dot);
-                await downloader.DownloadFileAsync(DownloadLink, path);
+                var path = Installer.DownloadPath + "\\" + filename.Substring(0, dot) + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + filename.Substring(dot);
+                await downloader.DownloadFileAsync(DownloadLink, path, progress);
                 Log.WriteLine($"download of {DownloadLink} started in {path}");
             }
             else
             {
                 string ext = "bin"; //get file extension using metadata
-                var path = Installer.DownloadPath + ProgramName + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + "." + ext;
-                await downloader.DownloadFileAsync(DownloadLink, path);
+                var path = Installer.DownloadPath + "\\" + ProgramName + $"_v{LatestVersion}_" + ProgramKey.Substring(ProgramKey.LastIndexOf("""\""") + 1) + "." + ext;
+                await downloader.DownloadFileAsync(DownloadLink, path, progress);
                 Log.WriteLine($"download of {DownloadLink} started in {path} (no extension found)");
             }
              
         }
         else { Log.WriteLine($"No download link found for {ProgramName}"); }
     }
+
+    public void PauseUpdate()
+    {
+        downloader.PauseDownload(DownloadLink!);
+    }
+    public void ResumeUpdate()
+    {
+        downloader.ResumeDownload(DownloadLink!);
+    }
+    public void CancelUpdate()
+    {
+        downloader.CancelDownload(DownloadLink!);
+    }
+
+    //State will be null or DownloadState.Paused or DownloadState.Canceled, etc ... check DownloadState enum definition
+    public DownloadTask.DownloadState GetDownloadState()
+    {
+        var task = downloader.GetTask(DownloadLink);
+        if (task == null) { return DownloadTask.DownloadState.NotAdded; }
+        return task.GetState(); //State is never null
+    }    
+
+    public long? GetDownloadSize()
+    {
+        var task = downloader.GetTask(DownloadLink);
+        if (task == null) { return null; }
+        return task.TotalBytes;
+    }
+
+
+
+
 
 
     public static async Task FetchUpdates(List<ProgramsClass> programslist)
@@ -304,14 +337,18 @@ internal class ProgramsClass
         }
     }
 
-    public static async Task DownloadUpdates(List<ProgramsClass> programslist)
+    public static async Task DownloadUpdates(List<ProgramsClass> programslist, List<IProgress<float>> progresses)
     {
+        int m = programslist.Count();
+        int n = progresses.Count();
+        if (n != m) { return; }
+
         Log.WriteLine("Starting updates downloads:");
-        foreach (ProgramsClass program in programslist)
+        for(int i = 0; i < n; i++)
         {
-            if (program.Hidden==0)
+            if (programslist[i].Hidden == 0)
             {
-                await program.DownloadUpdate();
+                await programslist[i].DownloadUpdate(progresses[i]);
             }
         }
     }

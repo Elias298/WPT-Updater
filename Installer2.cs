@@ -3,8 +3,12 @@ using System.Collections.Concurrent;
 using System.Configuration;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
 using System.Threading;
 using System.Threading.Tasks;
+using static DownloadTask;
+using static System.Windows.Forms.AxHost;
 
 public class Installer
 {
@@ -56,6 +60,7 @@ public class Installer
     {
         if (_activeDownloads.TryGetValue(url, out var task))
         {
+            task.Resume();
             _queue.Enqueue(task);
             _ = ProcessQueueAsync();
         }
@@ -92,6 +97,20 @@ public class Installer
             }
         }
     }
+    public DownloadTask? GetTask(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) { return null; }
+        _activeDownloads.TryGetValue(url, out var task);
+        return task;
+    }
+
+    public bool DownloadExists(string? url)
+    {
+        if (string.IsNullOrEmpty(url)) { return false; }
+        if (_activeDownloads.ContainsKey(url)){ return true; }
+        return false;
+    }
+
 }
 
 public class DownloadTask
@@ -103,6 +122,15 @@ public class DownloadTask
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private long _downloadedBytes = 0;
     private bool _paused = false;
+    public DownloadState State { get; private set; } = DownloadState.NotStarted;
+    public event Action<DownloadState>? OnStateChanged;
+    public long? TotalBytes { get; private set; }
+    
+    private void SetState(DownloadState newState)
+    {
+        State = newState;
+        OnStateChanged?.Invoke(State);
+    }
 
     public DownloadTask(string url, string destination, IProgress<float>? progress)
     {
@@ -115,6 +143,7 @@ public class DownloadTask
     {
         using var httpClient = new HttpClient();
         var request = new HttpRequestMessage(HttpMethod.Get, Url);
+        SetState(DownloadState.Downloading);
 
         if (_downloadedBytes > 0)
         {
@@ -124,10 +153,10 @@ public class DownloadTask
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, _cancellationTokenSource.Token);
         response.EnsureSuccessStatusCode();
 
-        long? totalBytes = response.Content.Headers.ContentLength;
-        if (totalBytes.HasValue)
+        TotalBytes = response.Content.Headers.ContentLength;
+        if (TotalBytes.HasValue)
         {
-            totalBytes += _downloadedBytes;
+            TotalBytes += _downloadedBytes;
         }
 
         using var fileStream = new FileStream(Destination, FileMode.Append, FileAccess.Write, FileShare.None);
@@ -146,28 +175,32 @@ public class DownloadTask
             await fileStream.WriteAsync(buffer, 0, bytesRead);
             _downloadedBytes += bytesRead;
 
-            if (totalBytes.HasValue)
+            if (TotalBytes.HasValue)
             {
-                _progress?.Report((float)_downloadedBytes / totalBytes.Value);
+                _progress?.Report((float)_downloadedBytes / TotalBytes.Value);
             }
         }
 
+        SetState(DownloadState.Completed);
         return true;
     }
 
     public void Pause()
     {
         _paused = true;
+        SetState(DownloadState.Paused);
     }
 
     public void Resume()
     {
         _paused = false;
+        SetState(DownloadState.Downloading);
     }
 
     public void Cancel()
     {
         _cancellationTokenSource.Cancel();
+        SetState(DownloadState.Canceled);
     }
 
     private async Task WaitUntilResumed()
@@ -177,4 +210,20 @@ public class DownloadTask
             await Task.Delay(500);
         }
     }
+
+    public enum DownloadState
+    {
+        NotAdded,
+        NotStarted,
+        Downloading,
+        Paused,
+        Completed,
+        Canceled
+    }
+
+    public DownloadState GetState()
+    {
+        return State;
+    }
+
 }
