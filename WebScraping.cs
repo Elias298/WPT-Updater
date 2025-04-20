@@ -245,6 +245,9 @@ internal class WebScraping
     string latestDownloadLink = string.Empty;
     string? version = this.LatestVersion;
 
+    HttpClientHandler handler = new HttpClientHandler { AllowAutoRedirect = true };
+    using HttpClient client = new HttpClient(handler);
+
     foreach (string url in urlsToCheck)
     {
         string pageSource = await GetPageSource(url);
@@ -254,29 +257,48 @@ internal class WebScraping
 
             if (!string.IsNullOrEmpty(version))
             {
-                // Prioritize links that include the latest version in the filename
-                Regex versionedPattern = new Regex($@"https:\/\/[^\s\'\""]*{Regex.Escape(version)}[^\s\'\""]*\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
+                // Include MSI, EXE, ZIP, DMG
+                Regex versionedPattern = new Regex($@"https:\/\/[^\s\'\""]*{Regex.Escape(version)}[^\s\'\""]*\.(exe|zip|dmg|msi)", RegexOptions.IgnoreCase);
                 foreach (System.Text.RegularExpressions.Match match in versionedPattern.Matches(pageSource))
+
                 {
                     downloadLinks.Add(match.Value);
                 }
             }
 
-            // If no versioned links were found, fall back to general download pattern
+            // Fallback: general file link pattern
             if (!downloadLinks.Any())
             {
-                Regex fallbackPattern = new Regex(@"https:\/\/[^\s\'\""]+\.(exe|zip|dmg)", RegexOptions.IgnoreCase);
+                Regex fallbackPattern = new Regex(@"https:\/\/[^\s\'\""]+\.(exe|zip|dmg|msi)", RegexOptions.IgnoreCase);
                 foreach (System.Text.RegularExpressions.Match match in fallbackPattern.Matches(pageSource))
+
                 {
                     downloadLinks.Add(match.Value);
                 }
             }
 
-            if (downloadLinks.Any())
+            // Special handling: Follow redirects for common mirrors (e.g. GitHub, SourceForge)
+            foreach (var rawLink in downloadLinks)
             {
-                latestDownloadLink = downloadLinks.First();
-                break;
+                try
+                {
+                    var response = await client.GetAsync(rawLink);
+                    string finalUrl = response.RequestMessage?.RequestUri?.ToString() ?? rawLink;
+
+                    // Prefer direct file links (not HTML pages)
+                    if (Regex.IsMatch(finalUrl, @"\.(exe|zip|dmg|msi)$", RegexOptions.IgnoreCase))
+                    {
+                        latestDownloadLink = finalUrl;
+                        break;
+                    }
+                }
+                catch
+                {
+                    continue; // Try next link
+                }
             }
+
+            if (!string.IsNullOrEmpty(latestDownloadLink)) break;
         }
     }
 
