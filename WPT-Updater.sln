@@ -5,6 +5,11 @@ VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPT-Updater", "WPT-Updater.csproj", "{714E87FB-C545-457D-AF5D-BC4DB370C3C8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{140C6B16-6CF0-444F-A586-585D10E52E1D}"
+	ProjectSection(SolutionItems) = preProject
+		Download_State.cs = Download_State.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
