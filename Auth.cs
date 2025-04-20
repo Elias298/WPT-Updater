@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace WPT_Updater
 {
@@ -63,14 +66,23 @@ namespace WPT_Updater
             }
         }
 
-        public static void SetProfileNumber(int profilenumber=1)
-        {
+        public static void SetProfileNumber_helper(int profilenumber=1)
+        { 
             Log.WriteLine($"setting profile number to {profilenumber}");
             var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             config.AppSettings.Settings["Profile"].Value = profilenumber.ToString();
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
             Log.WriteLine($"Profile number set to {profilenumber}");
+        }
+
+        public static void SetProfileNumber()
+        {
+            string selected = ShowSelectionDialog(GetProfiles());
+            Log.WriteLine("User selected: " + selected);
+            int lastIndex = selected.Length - 1;
+            int profileNum = (int)selected[lastIndex];
+            SetProfileNumber_helper(profileNum);
         }
 
         public static int GetProfileNumber()
@@ -81,6 +93,54 @@ namespace WPT_Updater
             int.TryParse(ConfigurationManager.AppSettings["Profile"], out profile);
             Log.WriteLine($"profile number {profile} will be used for selenium");
             return profile;
+        }
+
+        //this method takes as an input a list of strings (from getProfiles()), produces the box with the buttons, and returns the 
+        //string chosen by the user
+
+        static string ShowSelectionDialog(List<string> items)
+        {
+            using (var form = new ButtonSelectionForm(items))
+            {
+                var result = form.ShowDialog();
+                return result == DialogResult.OK ? form.SelectedItem : null;
+            }
+        }
+
+        //this class defines the box containing the different buttons
+
+        public class ButtonSelectionForm : Form
+        {
+            public string SelectedItem { get; private set; }
+
+            public ButtonSelectionForm(List<string> items)
+            {
+                this.Text = "Select an Option";
+                this.Size = new Size(300, 400);
+                this.StartPosition = FormStartPosition.CenterScreen;
+                this.AutoScroll = true;
+
+                int yOffset = 10;
+                foreach (var item in items)
+                {
+                    var button = new Button
+                    {
+                        Text = item,
+                        Size = new Size(250, 40),
+                        Location = new Point(10, yOffset)
+                    };
+
+                    button.Click += (sender, e) =>
+                    {
+                        SelectedItem = ((Button)sender).Text;
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    };
+
+                    this.Controls.Add(button);
+                    yOffset += 50;
+                }
+            }
         }
 
 
