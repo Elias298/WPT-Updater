@@ -74,14 +74,28 @@ namespace WPT_Updater
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
             Log.WriteLine($"Profile number set to {profilenumber}");
+            Console.WriteLine("Profile number set to " + profilenumber);
         }
 
         public static void SetProfileNumber()
         {
-            string selected = ShowSelectionDialog(GetProfiles());
-            Log.WriteLine("User selected: " + selected);
-            int lastIndex = selected.Length - 1;
-            int profileNum = (int)selected[lastIndex];
+            List<string> profiles = GetProfiles();
+
+            string selected = ShowSelectionDialog(profiles);
+
+            int profileNum = 0;
+
+            for (int i = 0; i < profiles.Count; i++)
+            {
+                if (profiles[i].Equals(selected))
+                {
+                    profileNum = i;
+                    break;
+                }
+            }
+
+            Console.WriteLine("Selected profile: " + selected + "\nProfile number: " + profileNum);
+
             SetProfileNumber_helper(profileNum);
         }
 
