@@ -28,6 +28,7 @@ namespace WPT_Updater
         private void Form1_Load(object sender, EventArgs e)
         {
             LoadGridData();
+            LoadUpdatesGridData();
 
             dataGridViewInstalled.CellMouseClick += dataGridView_CellMouseClick;
             dataGridViewInstalled.CellMouseDown += dataGridViewInstalled_CellMouseDown;
@@ -63,6 +64,43 @@ namespace WPT_Updater
 
             UpdateProgressDisplay();
         }
+
+        private void LoadUpdatesGridData()
+        {
+            var updates = allPrograms
+                .Where(p => p.InstalledVersion != p.LatestVersion)
+                .ToList();
+
+            dataGridViewUpdates.AutoGenerateColumns = true;
+            dataGridViewUpdates.DataSource = updates;
+
+            if (dataGridViewUpdates.Columns["ProgramKey"] != null)
+                dataGridViewUpdates.Columns["ProgramKey"].Visible = false;
+
+            if (!dataGridViewUpdates.Columns.Contains("DownloadStatus"))
+            {
+                DataGridViewTextBoxColumn progressColumn = new()
+                {
+                    Name = "DownloadStatus",
+                    HeaderText = "Progress (%)",
+                    ReadOnly = true
+                };
+                dataGridViewUpdates.Columns.Insert(0, progressColumn);
+            }
+
+            foreach (DataGridViewRow row in dataGridViewUpdates.Rows)
+            {
+                if (row.DataBoundItem is GridClass program)
+                {
+                    string key = program.ProgramKey;
+                    if (downloadProgress.ContainsKey(key))
+                        row.Cells["DownloadStatus"].Value = downloadProgress[key].ToString("0.00");
+                    else
+                        row.Cells["DownloadStatus"].Value = "0.00";
+                }
+            }
+        }
+
 
         private List<GridClass> GetInstalledProgramsFromDatabase()
         {
