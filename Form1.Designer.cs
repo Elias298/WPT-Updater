@@ -162,6 +162,7 @@
             // dataGridViewUpdates
             // 
             dataGridViewUpdates.AllowUserToOrderColumns = true;
+            dataGridViewUpdates.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dataGridViewUpdates.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dataGridViewUpdates.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridViewUpdates.Location = new Point(0, 0);
