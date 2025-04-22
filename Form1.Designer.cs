@@ -29,25 +29,6 @@
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            tabControl1 = new TabControl();
-            tabPage2 = new TabPage();
-            dataGridView1 = new DataGridView();
-            NameColumn = new DataGridViewTextBoxColumn();
-            Current_Version = new DataGridViewTextBoxColumn();
-            Latest_Version = new DataGridViewTextBoxColumn();
-            Install_Date = new DataGridViewTextBoxColumn();
-            tabPage3 = new TabPage();
-            dataGridView3 = new DataGridView();
-            dataGridViewTextBoxColumn5 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn6 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn7 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn8 = new DataGridViewTextBoxColumn();
-            tabPage1 = new TabPage();
-            dataGridView2 = new DataGridView();
-            dataGridViewTextBoxColumn1 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn2 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn3 = new DataGridViewTextBoxColumn();
-            dataGridViewTextBoxColumn4 = new DataGridViewTextBoxColumn();
             button1 = new Button();
             kebabMenuStrip = new ContextMenuStrip(components);
             Scan_New_Apps = new ToolStripMenuItem();
@@ -57,162 +38,21 @@
             Filters = new ToolStripMenuItem();
             panel1 = new Panel();
             textBox1 = new TextBox();
-            tabControl1.SuspendLayout();
-            tabPage2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
-            tabPage3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView3).BeginInit();
-            tabPage1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dataGridView2).BeginInit();
+            tabPage1 = new TabPage();
+            dataGridViewInstalled = new DataGridView();
+            tabPage2 = new TabPage();
+            dataGridViewUpdates = new DataGridView();
+            tabControl1 = new TabControl();
+            contextMenuStripInstalled = new ContextMenuStrip(components);
+            contextMenuStripUpdates = new ContextMenuStrip(components);
             kebabMenuStrip.SuspendLayout();
             panel1.SuspendLayout();
+            tabPage1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewInstalled).BeginInit();
+            tabPage2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewUpdates).BeginInit();
+            tabControl1.SuspendLayout();
             SuspendLayout();
-            // 
-            // tabControl1
-            // 
-            tabControl1.Controls.Add(tabPage2);
-            tabControl1.Controls.Add(tabPage3);
-            tabControl1.Controls.Add(tabPage1);
-            tabControl1.Dock = DockStyle.Fill;
-            tabControl1.Font = new Font("Segoe UI", 10F);
-            tabControl1.Location = new Point(0, 22);
-            tabControl1.Name = "tabControl1";
-            tabControl1.Padding = new Point(20, 6);
-            tabControl1.SelectedIndex = 0;
-            tabControl1.Size = new Size(1250, 552);
-            tabControl1.TabIndex = 0;
-            // 
-            // tabPage2
-            // 
-            tabPage2.Controls.Add(dataGridView1);
-            tabPage2.Location = new Point(4, 32);
-            tabPage2.Name = "tabPage2";
-            tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(1242, 516);
-            tabPage2.TabIndex = 1;
-            tabPage2.Text = "Updates";
-            tabPage2.UseVisualStyleBackColor = true;
-            tabPage2.Click += tabPage2_Click;
-            // 
-            // dataGridView1
-            // 
-            dataGridView1.AllowUserToOrderColumns = true;
-            dataGridView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridView1.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView1.Columns.AddRange(new DataGridViewColumn[] { NameColumn, Current_Version, Latest_Version, Install_Date });
-            dataGridView1.Location = new Point(0, 0);
-            dataGridView1.Name = "dataGridView1";
-            dataGridView1.Size = new Size(1242, 518);
-            dataGridView1.TabIndex = 1;
-            dataGridView1.CellContentClick += dataGridView1_CellContentClick;
-            // 
-            // NameColumn
-            // 
-            NameColumn.HeaderText = "Name";
-            NameColumn.Name = "NameColumn";
-            // 
-            // Current_Version
-            // 
-            Current_Version.HeaderText = "CurrentVersion";
-            Current_Version.Name = "Current_Version";
-            // 
-            // Latest_Version
-            // 
-            Latest_Version.HeaderText = "LatestVersion";
-            Latest_Version.Name = "Latest_Version";
-            // 
-            // Install_Date
-            // 
-            Install_Date.HeaderText = "Install Date";
-            Install_Date.Name = "Install_Date";
-            // 
-            // tabPage3
-            // 
-            tabPage3.Controls.Add(dataGridView3);
-            tabPage3.Location = new Point(4, 32);
-            tabPage3.Name = "tabPage3";
-            tabPage3.Padding = new Padding(3);
-            tabPage3.Size = new Size(1242, 516);
-            tabPage3.TabIndex = 2;
-            tabPage3.Text = "Betas";
-            tabPage3.UseVisualStyleBackColor = true;
-            // 
-            // dataGridView3
-            // 
-            dataGridView3.AllowUserToOrderColumns = true;
-            dataGridView3.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            dataGridView3.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridView3.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView3.Columns.AddRange(new DataGridViewColumn[] { dataGridViewTextBoxColumn5, dataGridViewTextBoxColumn6, dataGridViewTextBoxColumn7, dataGridViewTextBoxColumn8 });
-            dataGridView3.Location = new Point(0, 0);
-            dataGridView3.Name = "dataGridView3";
-            dataGridView3.Size = new Size(1242, 510);
-            dataGridView3.TabIndex = 2;
-            // 
-            // dataGridViewTextBoxColumn5
-            // 
-            dataGridViewTextBoxColumn5.HeaderText = "Name";
-            dataGridViewTextBoxColumn5.Name = "dataGridViewTextBoxColumn5";
-            // 
-            // dataGridViewTextBoxColumn6
-            // 
-            dataGridViewTextBoxColumn6.HeaderText = "CurrentVersion";
-            dataGridViewTextBoxColumn6.Name = "dataGridViewTextBoxColumn6";
-            // 
-            // dataGridViewTextBoxColumn7
-            // 
-            dataGridViewTextBoxColumn7.HeaderText = "LatestVersion";
-            dataGridViewTextBoxColumn7.Name = "dataGridViewTextBoxColumn7";
-            // 
-            // dataGridViewTextBoxColumn8
-            // 
-            dataGridViewTextBoxColumn8.HeaderText = "Install Date";
-            dataGridViewTextBoxColumn8.Name = "dataGridViewTextBoxColumn8";
-            // 
-            // tabPage1
-            // 
-            tabPage1.Controls.Add(dataGridView2);
-            tabPage1.Location = new Point(4, 32);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(1242, 516);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "Installed";
-            tabPage1.UseVisualStyleBackColor = true;
-            tabPage1.Click += tabPage1_Click;
-            // 
-            // dataGridView2
-            // 
-            dataGridView2.AllowUserToOrderColumns = true;
-            dataGridView2.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridView2.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridView2.Columns.AddRange(new DataGridViewColumn[] { dataGridViewTextBoxColumn1, dataGridViewTextBoxColumn2, dataGridViewTextBoxColumn3, dataGridViewTextBoxColumn4 });
-            dataGridView2.Location = new Point(0, 0);
-            dataGridView2.Name = "dataGridView2";
-            dataGridView2.Size = new Size(1242, 514);
-            dataGridView2.TabIndex = 2;
-            // 
-            // dataGridViewTextBoxColumn1
-            // 
-            dataGridViewTextBoxColumn1.HeaderText = "Name";
-            dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            // 
-            // dataGridViewTextBoxColumn2
-            // 
-            dataGridViewTextBoxColumn2.HeaderText = "CurrentVersion";
-            dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
-            // 
-            // dataGridViewTextBoxColumn3
-            // 
-            dataGridViewTextBoxColumn3.HeaderText = "LatestVersion";
-            dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
-            // 
-            // dataGridViewTextBoxColumn4
-            // 
-            dataGridViewTextBoxColumn4.HeaderText = "Install Date";
-            dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
             // 
             // button1
             // 
@@ -286,6 +126,76 @@
             textBox1.TabIndex = 3;
             textBox1.TextChanged += textBox1_TextChanged;
             // 
+            // tabPage1
+            // 
+            tabPage1.Controls.Add(dataGridViewInstalled);
+            tabPage1.Location = new Point(4, 32);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(1242, 516);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Installed";
+            tabPage1.UseVisualStyleBackColor = true;
+            tabPage1.Click += tabPage1_Click;
+            // 
+            // dataGridViewInstalled
+            // 
+            dataGridViewInstalled.AllowUserToOrderColumns = true;
+            dataGridViewInstalled.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridViewInstalled.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridViewInstalled.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewInstalled.Location = new Point(0, 0);
+            dataGridViewInstalled.Name = "dataGridViewInstalled";
+            dataGridViewInstalled.Size = new Size(1242, 514);
+            dataGridViewInstalled.TabIndex = 2;
+            // 
+            // tabPage2
+            // 
+            tabPage2.Controls.Add(dataGridViewUpdates);
+            tabPage2.Location = new Point(4, 32);
+            tabPage2.Name = "tabPage2";
+            tabPage2.Padding = new Padding(3);
+            tabPage2.Size = new Size(1242, 516);
+            tabPage2.TabIndex = 1;
+            tabPage2.Text = "Updates";
+            tabPage2.UseVisualStyleBackColor = true;
+            tabPage2.Click += tabPage2_Click;
+            // 
+            // dataGridViewUpdates
+            // 
+            dataGridViewUpdates.AllowUserToOrderColumns = true;
+            dataGridViewUpdates.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridViewUpdates.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridViewUpdates.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewUpdates.Location = new Point(0, 0);
+            dataGridViewUpdates.Name = "dataGridViewUpdates";
+            dataGridViewUpdates.Size = new Size(1242, 518);
+            dataGridViewUpdates.TabIndex = 1;
+            dataGridViewUpdates.CellContentClick += dataGridView1_CellContentClick;
+            // 
+            // tabControl1
+            // 
+            tabControl1.Controls.Add(tabPage2);
+            tabControl1.Controls.Add(tabPage1);
+            tabControl1.Dock = DockStyle.Fill;
+            tabControl1.Font = new Font("Segoe UI", 10F);
+            tabControl1.Location = new Point(0, 22);
+            tabControl1.Name = "tabControl1";
+            tabControl1.Padding = new Point(20, 6);
+            tabControl1.SelectedIndex = 0;
+            tabControl1.Size = new Size(1250, 552);
+            tabControl1.TabIndex = 0;
+            // 
+            // contextMenuStripInstalled
+            // 
+            contextMenuStripInstalled.Name = "contextMenuStripInstalled";
+            contextMenuStripInstalled.Size = new Size(61, 4);
+            // 
+            // contextMenuStripUpdates
+            // 
+            contextMenuStripUpdates.Name = "contextMenuStripUpdates";
+            contextMenuStripUpdates.Size = new Size(61, 4);
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -296,42 +206,20 @@
             Name = "Form1";
             Text = "WPT-Updater";
             Load += Form1_Load;
-            tabControl1.ResumeLayout(false);
-            tabPage2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
-            tabPage3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dataGridView3).EndInit();
-            tabPage1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dataGridView2).EndInit();
             kebabMenuStrip.ResumeLayout(false);
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
+            tabPage1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewInstalled).EndInit();
+            tabPage2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dataGridViewUpdates).EndInit();
+            tabControl1.ResumeLayout(false);
             ResumeLayout(false);
         }
 
         #endregion
-
-        private TabControl tabControl1;
-        private TabPage tabPage1;
-        private TabPage tabPage2;
-        private TabPage tabPage3;
-        private DataGridView dataGridView1;
-        private DataGridViewTextBoxColumn NameColumn;
-        private DataGridViewTextBoxColumn Current_Version;
-        private DataGridViewTextBoxColumn Latest_Version;
-        private DataGridViewTextBoxColumn Install_Date;
         private Button button1;
         private Panel panel1;
-        private DataGridView dataGridView3;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn5;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn6;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn7;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn8;
-        private DataGridView dataGridView2;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
-        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
         private ContextMenuStrip kebabMenuStrip;
         private ToolStripMenuItem Scan_New_Apps;
         private ToolStripMenuItem Hidden_Apps;
@@ -339,5 +227,12 @@
         private ToolStripMenuItem Download_Path;
         private TextBox textBox1;
         private ToolStripMenuItem Filters;
+        private TabPage tabPage1;
+        private DataGridView dataGridViewInstalled;
+        private TabPage tabPage2;
+        private DataGridView dataGridViewUpdates;
+        private TabControl tabControl1;
+        private ContextMenuStrip contextMenuStripInstalled;
+        private ContextMenuStrip contextMenuStripUpdates;
     }
 }
