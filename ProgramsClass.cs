@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using OpenQA.Selenium.BiDi.Modules.Script;
 
 namespace WPT_Updater;
 
@@ -420,6 +421,103 @@ internal class KeyStuff
             names[key] = ProgramsClass.GetLocalInfo(key).Item1;
         }
         return names;
+    }
+
+    public class ButtonBoxForm : Form
+    {
+        private Dictionary<string, string> keyValuePairs = GetInstalledProgramNames();
+        private List<string> clickedKeys = new List<string>();
+        private Dictionary<Button, string> buttonKeyMap = new Dictionary<Button, string>();
+        private int maxButtonWidth = 200;
+
+        public ButtonBoxForm()
+        {
+            Text = "Select programs";
+            StartPosition = FormStartPosition.CenterScreen;
+
+            int buttonHeight = 30;
+            int padding = 20;
+            int buttonSpacing = 10;
+
+            // Measure the widest string
+            using (var g = CreateGraphics())
+            {
+                foreach (var pair in keyValuePairs)
+                {
+                    var size = g.MeasureString(pair.Value, Font);
+                    int buttonWidth = (int)size.Width + padding * 2;
+                    if (buttonWidth > maxButtonWidth)
+                        maxButtonWidth = buttonWidth;
+                }
+            }
+
+            // Set form size based on button width
+            Width = maxButtonWidth + 60; // add space for scrollbar + margins
+            Height = 400;
+
+            var panel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+            Controls.Add(panel);
+
+            int y = 10;
+            foreach (var pair in keyValuePairs)
+            {
+                var button = new Button
+                {
+                    Text = pair.Value,
+                    Width = maxButtonWidth,
+                    Height = buttonHeight,
+                    Top = y,
+                    Left = 10,
+                    BackColor = SystemColors.Control
+                };
+
+                button.Click += ToggleButtonSelection;
+                panel.Controls.Add(button);
+                buttonKeyMap[button] = pair.Key;
+                y += buttonHeight + buttonSpacing;
+            }
+
+            var doneButton = new Button
+            {
+                Text = "Done",
+                Width = maxButtonWidth,
+                Height = buttonHeight,
+                Top = y + 10,
+                Left = 10
+            };
+            doneButton.Click += DoneButton_Click;
+            panel.Controls.Add(doneButton);
+        }
+
+        private void ToggleButtonSelection(object sender, EventArgs e)
+        {
+            if (sender is Button button && buttonKeyMap.ContainsKey(button))
+            {
+                string key = buttonKeyMap[button];
+                if (clickedKeys.Contains(key))
+                {
+                    clickedKeys.Remove(key);
+                    button.BackColor = SystemColors.Control;
+                }
+                else
+                {
+                    clickedKeys.Add(key);
+                    button.BackColor = Color.LightGreen;
+                }
+            }
+        }
+
+        private void DoneButton_Click(object sender, EventArgs e)
+        {
+            Close();
+            string selectedKeys = string.Join(", ", clickedKeys);
+            Console.WriteLine($"Selected keys: {selectedKeys}");
+            ProgramsClass.AddPrograms(clickedKeys);
+        }
     }
 
 }
