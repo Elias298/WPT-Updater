@@ -167,6 +167,14 @@ internal class AppData
 
         }
 
-
     }
+    public async Task EditCell(string row, string column, string text)
+    {
+        using (var connection = new SQLiteConnection(connectionString))
+        {
+            var query = $"UPDATE Programs SET {column} = @Value WHERE ProgramKey = @ProgramKey";
+            await connection.ExecuteAsync(query, new { Value = text, ProgramKey = row });
+        }
+    }
+
 }
