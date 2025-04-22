@@ -19,6 +19,7 @@ namespace WPT_Updater
         private System.Windows.Forms.Timer? refreshTimer;
         private Dictionary<string, float> downloadProgress = new();
         private Dictionary<string, WebClient> activeDownloads = new();
+        private string? selectedProgramKeyForUpdates;
 
         public Form1()
         {
@@ -27,17 +28,38 @@ namespace WPT_Updater
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            LoadGridData();
-            LoadUpdatesGridData();
+            // Load data into the grids for installed programs and updates
+            LoadGridData();           // Loads data for the Installed tab
+            LoadUpdatesGridData();    // Loads data for the Updates tab
 
-            dataGridViewInstalled.CellMouseClick += dataGridView_CellMouseClick;
-            dataGridViewInstalled.CellMouseDown += dataGridViewInstalled_CellMouseDown;
+            // Attach right-click event handler to data grid views
+            dataGridViewInstalled.CellMouseClick += dataGridViewInstalled_CellMouseClick;
+            dataGridViewUpdates.CellMouseClick += dataGridViewUpdates_CellMouseClick;
 
+            // For Installed tab context menu
+            contextMenuStripInstalled = new ContextMenuStrip();
+            contextMenuStripInstalled.Items.Add("Check for Update", null, OnCheckForUpdate_Click);
+
+            // For Updates tab context menu
+            contextMenuStripUpdates = new ContextMenuStrip();
+            contextMenuStripUpdates.Items.Add("Download", null, OnDownload_Click);
+            contextMenuStripUpdates.Items.Add("Pause", null, OnPause_Click);
+            contextMenuStripUpdates.Items.Add("Resume", null, OnResume_Click);
+            contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
+
+            // Set up a timer to refresh data every 5 seconds (adjust as needed)
             refreshTimer = new System.Windows.Forms.Timer();
-            refreshTimer.Interval = 5000;
-            refreshTimer.Tick += RefreshTimer_Tick;
+            refreshTimer.Interval = 5000; // 5 seconds
+            refreshTimer.Tick += RefreshTimer_Tick; // Event handler for the timer tick
             refreshTimer.Start();
+
+            // Updating the Database on changes done to cells in the DataGridView
+            dataGridViewInstalled.CellValueChanged += DataGridView_CellValueChanged;
+            dataGridViewUpdates.CellValueChanged += DataGridView_CellValueChanged;
+
+
         }
+
 
         private void LoadGridData()
         {
@@ -156,85 +178,139 @@ namespace WPT_Updater
             }
         }
 
-        private void dataGridViewInstalled_CellMouseDown(object? sender, DataGridViewCellMouseEventArgs e)
+        private void DataGridView_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
         {
-            if (e.Button == MouseButtons.Right && e.RowIndex >= 0 && e.ColumnIndex >= 0)
+            // Ensure we're not in a header row or invalid index
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
             {
-                var column = dataGridViewInstalled.Columns[e.ColumnIndex];
-                if (column.Name == "DownloadStatus")
+                var grid = sender as DataGridView;
+                var row = grid.Rows[e.RowIndex];
+                var column = grid.Columns[e.ColumnIndex];
+
+                // Extract the ProgramKey from the row (assuming it's stored in the "ProgramKey" column)
+                string programKey = row.Cells["ProgramKey"].Value.ToString();
+
+                // Get the name of the column that was modified
+                string columnName = column.Name;
+
+                // Get the new value in the cell
+                string newValue = row.Cells[e.ColumnIndex].Value?.ToString() ?? "";
+
+                // Call the method to update the database
+                EditCell(programKey, columnName, newValue);
+            }
+        }
+
+        private void EditCell(string programKey, string columnName, string newValue)
+        {
+            // Call the dbhelper method with the row (ProgramKey), column name, and new value
+            //ProgramsClass.dbhelper.UpdateCell(programKey, columnName, newValue);
+        }
+
+
+        // Handling right-click for the installed programs grid
+        private void dataGridViewInstalled_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+            {
+                // Clear previous selection and select the right-clicked row
+                dataGridViewInstalled.ClearSelection();
+                dataGridViewInstalled.Rows[e.RowIndex].Selected = true;
+
+                // Retrieve the ProgramKey from the right-clicked row's bound data (GridClass object)
+                string programKey = ((GridClass)dataGridViewInstalled.Rows[e.RowIndex].DataBoundItem).ProgramKey;
+
+                // Retrieve the Program object using the ProgramKey
+                var program = ProgramsClass.dbhelper.GetProgram(programKey);
+
+                // Store the Program object in the context menu's Tag for later use
+                contextMenuStripInstalled.Tag = program;
+
+                // Show the context menu at the current mouse position
+                contextMenuStripInstalled.Show(Cursor.Position);
+            }
+        }
+
+        // Handling right-click for the updates programs grid
+        private void dataGridViewUpdates_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+            {
+                // Clear previous selection and select the right-clicked row
+                dataGridViewUpdates.ClearSelection();
+                dataGridViewUpdates.Rows[e.RowIndex].Selected = true;
+
+                // Retrieve the ProgramKey from the right-clicked row's bound data (GridClass object)
+                string programKey = ((GridClass)dataGridViewUpdates.Rows[e.RowIndex].DataBoundItem).ProgramKey;
+
+                // Retrieve the Program object using the ProgramKey
+                var program = ProgramsClass.dbhelper.GetProgram(programKey);
+
+                // Store the Program object in the context menu's Tag for later use
+                contextMenuStripUpdates.Tag = program;
+
+                // Show the context menu at the current mouse position
+                contextMenuStripUpdates.Show(Cursor.Position);
+            }
+        }
+
+
+        private async void OnCheckForUpdate_Click(object? sender, EventArgs e)
+        {
+            if (contextMenuStripInstalled.Tag is ProgramsClass program)
+            {
+                await program.CheckLatestVersion();
+
+                // Refresh both tabs, especially Updates tab to reflect changes if any
+                LoadGridData();         // Refresh Installed tab
+                LoadUpdatesGridData();  // Refresh Updates tab
+
+                // Optional: Let the user know the result
+                if (!string.IsNullOrEmpty(program.LatestVersion) &&
+                    Version.TryParse(program.LatestVersion, out var latest) &&
+                    Version.TryParse(program.InstalledVersion, out var installed) &&
+                    latest > installed)
                 {
-                    var row = dataGridViewInstalled.Rows[e.RowIndex];
-                    var program = (GridClass)row.DataBoundItem;
-
-                    ContextMenuStrip contextMenu = new();
-
-                    ToolStripMenuItem startItem = new("Start Download");
-                    startItem.Click += (s, ev) => StartDownload(program, row);
-
-                    contextMenu.Items.Add(startItem);
-
-                    if (activeDownloads.ContainsKey(program.ProgramKey))
-                    {
-                        ToolStripMenuItem pauseItem = new("Pause");
-                        ToolStripMenuItem resumeItem = new("Resume");
-
-                        pauseItem.Click += (s, ev) => PauseDownload(program.ProgramKey);
-                        resumeItem.Click += (s, ev) => ResumeDownload(program, row);
-
-                        contextMenu.Items.Add(pauseItem);
-                        contextMenu.Items.Add(resumeItem);
-                    }
-
-                    var cellRect = dataGridViewInstalled.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true);
-                    var dropPoint = dataGridViewInstalled.PointToScreen(new Point(cellRect.Left, cellRect.Bottom));
-                    contextMenu.Show(dropPoint);
+                    MessageBox.Show($"{program.ProgramName} has an update!\nInstalled: {installed}\nLatest: {latest}");
+                }
+                else
+                {
+                    MessageBox.Show($"No updates found for {program.ProgramName}.");
                 }
             }
         }
 
-        private void StartDownload(GridClass program, DataGridViewRow row)
+
+        private void OnDownload_Click(object? sender, EventArgs e)
         {
-            string targetPath = Path.Combine(Path.GetTempPath(), program.ProgramName + ".zip");
-
-            WebClient client = new();
-            activeDownloads[program.ProgramKey] = client;
-            downloadProgress[program.ProgramKey] = 0f;
-
-            client.DownloadProgressChanged += (s, e) =>
+            if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                float progress = e.ProgressPercentage;
-                downloadProgress[program.ProgramKey] = progress;
-                row.Cells["DownloadStatus"].Value = progress.ToString("0.00");
-            };
-
-            client.DownloadFileCompleted += (s, e) =>
-            {
-                activeDownloads.Remove(program.ProgramKey);
-                row.Cells["DownloadStatus"].Value = "100.00";
-            };
-
-            try
-            {
-                client.DownloadFileAsync(new Uri(program.LatestVersion), targetPath); // Assume LatestVersion contains URL
-            }
-            catch
-            {
-                row.Cells["DownloadStatus"].Value = "Error";
+                MessageBox.Show($"Download: {program.ProgramName}");
             }
         }
 
-        private void PauseDownload(string programKey)
+        private void OnPause_Click(object? sender, EventArgs e)
         {
-            if (activeDownloads.TryGetValue(programKey, out var client))
+            if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                client.CancelAsync();
-                activeDownloads.Remove(programKey);
+                MessageBox.Show($"Pause: {program.ProgramName}");
             }
         }
 
-        private void ResumeDownload(GridClass program, DataGridViewRow row)
+        private void OnResume_Click(object? sender, EventArgs e)
         {
-            StartDownload(program, row);
+            if (contextMenuStripUpdates.Tag is ProgramsClass program)
+            {
+                MessageBox.Show($"Resume: {program.ProgramName}");
+            }
+        }
+
+        private void OnCancel_Click(object? sender, EventArgs e)
+        {
+            if (contextMenuStripUpdates.Tag is ProgramsClass program)
+            {
+                MessageBox.Show($"Cancel: {program.ProgramName}");
+            }
         }
 
         private void dataGridView_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)

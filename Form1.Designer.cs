@@ -43,6 +43,8 @@
             tabPage2 = new TabPage();
             dataGridViewUpdates = new DataGridView();
             tabControl1 = new TabControl();
+            contextMenuStripInstalled = new ContextMenuStrip(components);
+            contextMenuStripUpdates = new ContextMenuStrip(components);
             kebabMenuStrip.SuspendLayout();
             panel1.SuspendLayout();
             tabPage1.SuspendLayout();
@@ -184,6 +186,16 @@
             tabControl1.Size = new Size(1250, 552);
             tabControl1.TabIndex = 0;
             // 
+            // contextMenuStripInstalled
+            // 
+            contextMenuStripInstalled.Name = "contextMenuStripInstalled";
+            contextMenuStripInstalled.Size = new Size(61, 4);
+            // 
+            // contextMenuStripUpdates
+            // 
+            contextMenuStripUpdates.Name = "contextMenuStripUpdates";
+            contextMenuStripUpdates.Size = new Size(61, 4);
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -220,5 +232,7 @@
         private TabPage tabPage2;
         private DataGridView dataGridViewUpdates;
         private TabControl tabControl1;
+        private ContextMenuStrip contextMenuStripInstalled;
+        private ContextMenuStrip contextMenuStripUpdates;
     }
 }
