@@ -201,10 +201,10 @@ namespace WPT_Updater
             }
         }
 
-        private void EditCell(string programKey, string columnName, string newValue)
+        private async void EditCell(string programKey, string columnName, string newValue)
         {
             // Call the dbhelper method with the row (ProgramKey), column name, and new value
-            //ProgramsClass.dbhelper.UpdateCell(programKey, columnName, newValue);
+            await ProgramsClass.dbhelper.EditCell(programKey, columnName, newValue);
         }
 
 
@@ -232,27 +232,54 @@ namespace WPT_Updater
         }
 
         // Handling right-click for the updates programs grid
-        private void dataGridViewUpdates_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        private void dataGridViewUpdates_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
             {
-                // Clear previous selection and select the right-clicked row
                 dataGridViewUpdates.ClearSelection();
                 dataGridViewUpdates.Rows[e.RowIndex].Selected = true;
 
-                // Retrieve the ProgramKey from the right-clicked row's bound data (GridClass object)
-                string programKey = ((GridClass)dataGridViewUpdates.Rows[e.RowIndex].DataBoundItem).ProgramKey;
-
-                // Retrieve the Program object using the ProgramKey
-                var program = ProgramsClass.dbhelper.GetProgram(programKey);
-
-                // Store the Program object in the context menu's Tag for later use
+                string key = ((GridClass)dataGridViewUpdates.Rows[e.RowIndex].DataBoundItem).ProgramKey;
+                var program = ProgramsClass.dbhelper.GetProgram(key);
                 contextMenuStripUpdates.Tag = program;
 
-                // Show the context menu at the current mouse position
+                // Clear previous items
+                contextMenuStripUpdates.Items.Clear();
+
+                // Get current download state
+                var state = program.GetDownloadState();
+
+                switch (state)
+                {
+                    case DownloadTask.DownloadState.NotAdded:
+                    case DownloadTask.DownloadState.NotStarted:
+                        contextMenuStripUpdates.Items.Add("Download", null, OnDownload_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Downloading:
+                        contextMenuStripUpdates.Items.Add("Pause", null, OnPause_Click);
+                        contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Paused:
+                        contextMenuStripUpdates.Items.Add("Resume", null, OnResume_Click);
+                        contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Completed:
+                        contextMenuStripUpdates.Items.Add("Re-download", null, OnDownload_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Canceled:
+                        contextMenuStripUpdates.Items.Add("Retry Download", null, OnDownload_Click);
+                        break;
+                }
+
+                // Show the context menu at the mouse cursor
                 contextMenuStripUpdates.Show(Cursor.Position);
             }
         }
+
 
 
         private async void OnCheckForUpdate_Click(object? sender, EventArgs e)
@@ -281,19 +308,41 @@ namespace WPT_Updater
         }
 
 
-        private void OnDownload_Click(object? sender, EventArgs e)
+        private async void OnDownload_Click(object? sender, EventArgs e)
         {
             if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                MessageBox.Show($"Download: {program.ProgramName}");
+                // Create a progress reporter that updates the DataGridView
+                var progress = new Progress<float>(p =>
+                {
+                    UpdateDownloadProgress(program.ProgramKey, p);
+                });
+
+                await program.DownloadUpdate(progress);
+
+                RefreshUpdatesTab();
             }
         }
+
+        private void UpdateDownloadProgress(string programKey, float progressPercentage)
+        {
+            foreach (DataGridViewRow row in dataGridViewUpdates.Rows)
+            {
+                if (row.DataBoundItem is GridClass program && program.ProgramKey == programKey)
+                {
+                    row.Cells["DownloadStatus"].Value = $"{(progressPercentage * 100):0.0}%";
+                    break;
+                }
+            }
+        }
+
 
         private void OnPause_Click(object? sender, EventArgs e)
         {
             if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                MessageBox.Show($"Pause: {program.ProgramName}");
+                program.PauseUpdate();
+                RefreshUpdatesTab();
             }
         }
 
@@ -301,7 +350,8 @@ namespace WPT_Updater
         {
             if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                MessageBox.Show($"Resume: {program.ProgramName}");
+                program.ResumeUpdate();
+                RefreshUpdatesTab();
             }
         }
 
@@ -309,9 +359,16 @@ namespace WPT_Updater
         {
             if (contextMenuStripUpdates.Tag is ProgramsClass program)
             {
-                MessageBox.Show($"Cancel: {program.ProgramName}");
+                program.CancelUpdate();
+                RefreshUpdatesTab();
             }
         }
+
+        private void RefreshUpdatesTab()
+        {
+            LoadUpdatesGridData(); // or whatever method you use to refresh that DataGridView
+        }
+        
 
         private void dataGridView_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
         {
