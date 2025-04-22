@@ -172,8 +172,8 @@ internal class AppData
     {
         using (var connection = new SQLiteConnection(connectionString))
         {
-            var query = $"UPDATE Programs SET {column} = @Value WHERE key = @key";
-            await connection.ExecuteAsync(query, new { Value = text, key = row });
+            var query = $"UPDATE Programs SET {column} = @Value WHERE ProgramKey = @ProgramKey";
+            await connection.ExecuteAsync(query, new { Value = text, ProgramKey = row });
         }
     }
 
