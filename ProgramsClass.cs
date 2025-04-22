@@ -55,13 +55,13 @@ internal class ProgramsClass
 
         // Get program details
         var (programName, installedVersion, installDateString) = GetLocalInfo(subkeyPath);
-        if (installedVersion=="??.?")
+        if (installedVersion == null)
         {
             Log.WriteLine($"No version found for {programName}, not added");
             return;
         }
 
-        if (programName=="N.A")
+        if (programName == null)
         {
             Log.WriteLine($"No program name found for key {subkeyPath}");
             return;
@@ -83,14 +83,14 @@ internal class ProgramsClass
         
     }
 
-    public static (string,string,string) GetLocalInfo(string subkeyPath)
+    public static (string?,string?,string?) GetLocalInfo(string subkeyPath)
     {
         Log.WriteLine($"Fetching registry info for {subkeyPath}");
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
 
         // Get program details
 
-        var programName = "N.A";
+        string? programName = null;
         string? capturedprogramName = subKey?.GetValue("DisplayName") as string;
         if (!string.IsNullOrEmpty(capturedprogramName))
         {
@@ -98,15 +98,16 @@ internal class ProgramsClass
         }
 
         string? capturedversion = subKey?.GetValue("DisplayVersion") as string;
-        string installedVersion = "??.?";
+        string? installedVersion = null;
         if (!string.IsNullOrEmpty(capturedversion)) 
         {
             var parts = capturedversion.Split(".");
             var trimmed = parts.Take(4);
             string smaller = string.Join(".", trimmed);
             installedVersion = smaller;
-            Version parsed = Version.Parse(smaller);
-            installedVersion = parsed.ToString();
+            if (Version.TryParse(smaller, out Version? parsed))
+            { installedVersion = parsed.ToString(); }
+            
         }
         string? installDateString = subKey?.GetValue("InstallDate") as string;
         if (string.IsNullOrEmpty(installDateString))
@@ -207,6 +208,11 @@ internal class ProgramsClass
     {
         Log.WriteLine($"Refreshing {ProgramName}:");
         var (programname, installedversion, installdate) = GetLocalInfo(this.ProgramKey);
+        if(programname == null || installedversion == null)
+        {
+            await this.RemoveProgram();
+            Log.WriteLine($"Trouble getting info for {programname}, removed {this.ProgramKey}");
+        }
         await this.EditProgramInfo(programName: programname, installedVersion: installedversion, installDate: installdate);
 
         string? downloadfile = this.downloadedfilestr();
@@ -417,7 +423,9 @@ internal class KeyStuff
         Dictionary<string, string> names = new();
         foreach(var key in allkeys)
         {
-            names[key] = ProgramsClass.GetLocalInfo(key).Item1;
+            string? name = ProgramsClass.GetLocalInfo(key).Item1;
+            if (name == null) { continue; }
+            names[key] = name;
         }
         return names;
     }

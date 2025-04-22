@@ -24,6 +24,7 @@ using System.Collections;
 using static OpenQA.Selenium.BiDi.Modules.BrowsingContext.InnerTextLocator;
 using OpenQA.Selenium.BiDi.Modules.Script;
 using OpenQA.Selenium.BiDi.Modules.Input;
+using System.Security.AccessControl;
 
 
 namespace WPT_Updater;
@@ -122,7 +123,13 @@ internal class WebScraping
 
         int totalmatches = 0;
         Dictionary<Version,(bool,float,string)> results = new();
-        Version InstalledVersion = Version.Parse(InstalledVersionstr);
+        Version.TryParse(InstalledVersionstr, out Version? InstalledVersion);
+        if (InstalledVersion==null)
+        {
+            Log.WriteLine($"No valid version found for{ProgramName}, can't check for updates.");
+            return;
+        }
+
         string? firstPage = null;
 
         foreach (string url in Urls)
