@@ -34,7 +34,7 @@ public class Installer
         config.Save(ConfigurationSaveMode.Modified);
         ConfigurationManager.RefreshSection("appSettings");
     }
-    public void SetDownloadPath()
+    public static void SetDownloadPath()
     {
         using (var dialog = new FolderBrowserDialog())
         {

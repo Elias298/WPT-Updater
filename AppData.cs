@@ -170,6 +170,8 @@ internal class AppData
     }
     public async Task EditCell(string row, string column, string text)
     {
+        if (column == "DownloadStatus") { return; }
+
         using (var connection = new SQLiteConnection(connectionString))
         {
             var query = $"UPDATE Programs SET {column} = @Value WHERE ProgramKey = @ProgramKey";

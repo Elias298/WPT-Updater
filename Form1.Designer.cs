@@ -35,7 +35,7 @@
             Hidden_Apps = new ToolStripMenuItem();
             Select_account = new ToolStripMenuItem();
             Download_Path = new ToolStripMenuItem();
-            Filters = new ToolStripMenuItem();
+            Check_For_Updates = new ToolStripMenuItem();
             panel1 = new Panel();
             textBox1 = new TextBox();
             tabPage1 = new TabPage();
@@ -45,6 +45,7 @@
             tabControl1 = new TabControl();
             contextMenuStripInstalled = new ContextMenuStrip(components);
             contextMenuStripUpdates = new ContextMenuStrip(components);
+            contextMenuStripColumn = new ContextMenuStrip(components);
             kebabMenuStrip.SuspendLayout();
             panel1.SuspendLayout();
             tabPage1.SuspendLayout();
@@ -68,40 +69,40 @@
             // 
             // kebabMenuStrip
             // 
-            kebabMenuStrip.Items.AddRange(new ToolStripItem[] { Scan_New_Apps, Hidden_Apps, Select_account, Download_Path, Filters });
+            kebabMenuStrip.Items.AddRange(new ToolStripItem[] { Scan_New_Apps, Hidden_Apps, Select_account, Download_Path, Check_For_Updates });
             kebabMenuStrip.Name = "kebabMenuStrip";
-            kebabMenuStrip.Size = new Size(173, 114);
+            kebabMenuStrip.Size = new Size(181, 136);
             kebabMenuStrip.Opening += kebabMenuStrip_Opening;
             // 
             // Scan_New_Apps
             // 
             Scan_New_Apps.Name = "Scan_New_Apps";
-            Scan_New_Apps.Size = new Size(172, 22);
+            Scan_New_Apps.Size = new Size(180, 22);
             Scan_New_Apps.Text = "Scan for new Apps";
             // 
             // Hidden_Apps
             // 
             Hidden_Apps.Name = "Hidden_Apps";
-            Hidden_Apps.Size = new Size(172, 22);
+            Hidden_Apps.Size = new Size(180, 22);
             Hidden_Apps.Text = "Hidden apps";
             // 
             // Select_account
             // 
             Select_account.Name = "Select_account";
-            Select_account.Size = new Size(172, 22);
+            Select_account.Size = new Size(180, 22);
             Select_account.Text = "Select Account";
             // 
             // Download_Path
             // 
             Download_Path.Name = "Download_Path";
-            Download_Path.Size = new Size(172, 22);
+            Download_Path.Size = new Size(180, 22);
             Download_Path.Text = "Download Path";
             // 
-            // Filters
+            // Check_For_Updates
             // 
-            Filters.Name = "Filters";
-            Filters.Size = new Size(172, 22);
-            Filters.Text = "Filters";
+            Check_For_Updates.Name = "Check_For_Updates";
+            Check_For_Updates.Size = new Size(180, 22);
+            Check_For_Updates.Text = "Check For Updates";
             // 
             // panel1
             // 
@@ -196,6 +197,11 @@
             contextMenuStripUpdates.Name = "contextMenuStripUpdates";
             contextMenuStripUpdates.Size = new Size(61, 4);
             // 
+            // contextMenuStripColumn
+            // 
+            contextMenuStripColumn.Name = "contextMenuStripColumn";
+            contextMenuStripColumn.Size = new Size(61, 4);
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -226,7 +232,7 @@
         private ToolStripMenuItem Select_account;
         private ToolStripMenuItem Download_Path;
         private TextBox textBox1;
-        private ToolStripMenuItem Filters;
+        private ToolStripMenuItem Check_For_Updates;
         private TabPage tabPage1;
         private DataGridView dataGridViewInstalled;
         private TabPage tabPage2;
@@ -234,5 +240,6 @@
         private TabControl tabControl1;
         private ContextMenuStrip contextMenuStripInstalled;
         private ContextMenuStrip contextMenuStripUpdates;
+        private ContextMenuStrip contextMenuStripColumn;
     }
 }
