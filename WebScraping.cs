@@ -25,6 +25,7 @@ using System.Collections;
 using static OpenQA.Selenium.BiDi.Modules.BrowsingContext.InnerTextLocator;
 using OpenQA.Selenium.BiDi.Modules.Script;
 using OpenQA.Selenium.BiDi.Modules.Input;
+using System.Security.AccessControl;
 
 
 namespace WPT_Updater;

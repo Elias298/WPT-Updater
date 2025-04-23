@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using System.Diagnostics.Eventing.Reader;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using OpenQA.Selenium.BiDi.Modules.Script;
 
 namespace WPT_Updater;
 
@@ -55,13 +56,13 @@ internal class ProgramsClass
 
         // Get program details
         var (programName, installedVersion, installDateString) = GetLocalInfo(subkeyPath);
-        if (installedVersion=="??.?")
+        if (installedVersion == null)
         {
             Log.WriteLine($"No version found for {programName}, not added");
             return;
         }
 
-        if (programName=="N.A")
+        if (programName == null)
         {
             Log.WriteLine($"No program name found for key {subkeyPath}");
             return;
@@ -83,14 +84,14 @@ internal class ProgramsClass
         
     }
 
-    public static (string,string,string) GetLocalInfo(string subkeyPath)
+    public static (string?,string?,string?) GetLocalInfo(string subkeyPath)
     {
         Log.WriteLine($"Fetching registry info for {subkeyPath}");
         using RegistryKey? subKey = Registry.LocalMachine.OpenSubKey(subkeyPath);
 
         // Get program details
 
-        var programName = "N.A";
+        string? programName = null;
         string? capturedprogramName = subKey?.GetValue("DisplayName") as string;
         if (!string.IsNullOrEmpty(capturedprogramName))
         {
@@ -98,15 +99,16 @@ internal class ProgramsClass
         }
 
         string? capturedversion = subKey?.GetValue("DisplayVersion") as string;
-        string installedVersion = "??.?";
+        string? installedVersion = null;
         if (!string.IsNullOrEmpty(capturedversion)) 
         {
             var parts = capturedversion.Split(".");
             var trimmed = parts.Take(4);
             string smaller = string.Join(".", trimmed);
             installedVersion = smaller;
-            Version parsed = Version.Parse(smaller);
-            installedVersion = parsed.ToString();
+            if (Version.TryParse(smaller, out Version? parsed))
+            { installedVersion = parsed.ToString(); }
+            
         }
         string? installDateString = subKey?.GetValue("InstallDate") as string;
         if (string.IsNullOrEmpty(installDateString))
@@ -207,6 +209,11 @@ internal class ProgramsClass
     {
         Log.WriteLine($"Refreshing {ProgramName}:");
         var (programname, installedversion, installdate) = GetLocalInfo(this.ProgramKey);
+        if(programname == null || installedversion == null)
+        {
+            await this.RemoveProgram();
+            Log.WriteLine($"Trouble getting info for {programname}, removed {this.ProgramKey}");
+        }
         await this.EditProgramInfo(programName: programname, installedVersion: installedversion, installDate: installdate);
 
         string? downloadfile = this.downloadedfilestr();
@@ -417,9 +424,108 @@ internal class KeyStuff
         Dictionary<string, string> names = new();
         foreach(var key in allkeys)
         {
-            names[key] = ProgramsClass.GetLocalInfo(key).Item1;
+            string? name = ProgramsClass.GetLocalInfo(key).Item1;
+            if (name == null) { continue; }
+            names[key] = name;
         }
         return names;
+    }
+
+    public class ButtonBoxForm : Form
+    {
+        private Dictionary<string, string> keyValuePairs = GetInstalledProgramNames();
+        private List<string> clickedKeys = new List<string>();
+        private Dictionary<Button, string> buttonKeyMap = new Dictionary<Button, string>();
+        private int maxButtonWidth = 200;
+
+        public ButtonBoxForm()
+        {
+            Text = "Select programs";
+            StartPosition = FormStartPosition.CenterScreen;
+
+            int buttonHeight = 30;
+            int padding = 20;
+            int buttonSpacing = 10;
+
+            // Measure the widest string
+            using (var g = CreateGraphics())
+            {
+                foreach (var pair in keyValuePairs)
+                {
+                    var size = g.MeasureString(pair.Value, Font);
+                    int buttonWidth = (int)size.Width + padding * 2;
+                    if (buttonWidth > maxButtonWidth)
+                        maxButtonWidth = buttonWidth;
+                }
+            }
+
+            // Set form size based on button width
+            Width = maxButtonWidth + 60; // add space for scrollbar + margins
+            Height = 400;
+
+            var panel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true
+            };
+            Controls.Add(panel);
+
+            int y = 10;
+            foreach (var pair in keyValuePairs)
+            {
+                var button = new Button
+                {
+                    Text = pair.Value,
+                    Width = maxButtonWidth,
+                    Height = buttonHeight,
+                    Top = y,
+                    Left = 10,
+                    BackColor = SystemColors.Control
+                };
+
+                button.Click += ToggleButtonSelection;
+                panel.Controls.Add(button);
+                buttonKeyMap[button] = pair.Key;
+                y += buttonHeight + buttonSpacing;
+            }
+
+            var doneButton = new Button
+            {
+                Text = "Done",
+                Width = maxButtonWidth,
+                Height = buttonHeight,
+                Top = y + 10,
+                Left = 10
+            };
+            doneButton.Click += DoneButton_Click;
+            panel.Controls.Add(doneButton);
+        }
+
+        private void ToggleButtonSelection(object sender, EventArgs e)
+        {
+            if (sender is Button button && buttonKeyMap.ContainsKey(button))
+            {
+                string key = buttonKeyMap[button];
+                if (clickedKeys.Contains(key))
+                {
+                    clickedKeys.Remove(key);
+                    button.BackColor = SystemColors.Control;
+                }
+                else
+                {
+                    clickedKeys.Add(key);
+                    button.BackColor = Color.LightGreen;
+                }
+            }
+        }
+
+        private void DoneButton_Click(object sender, EventArgs e)
+        {
+            Close();
+            string selectedKeys = string.Join(", ", clickedKeys);
+            Console.WriteLine($"Selected keys: {selectedKeys}");
+            ProgramsClass.AddPrograms(clickedKeys);
+        }
     }
 
 }
