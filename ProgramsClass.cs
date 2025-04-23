@@ -246,19 +246,12 @@ internal class ProgramsClass
         Log.WriteLine($"Version checking for {ProgramName} started:");
         var webprogram = new WebScraping(this);
         await webprogram.CheckVersion();
-        await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, versionPage:webprogram.VersionPage , officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage);
+        await this.EditProgramInfo(latestVersion: webprogram.LatestVersion, versionPage:webprogram.VersionPage , officialPage: webprogram.OfficialPage, downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
         Log.WriteLine($"Version checking done for {ProgramName}");
     }
 
 
-    public async Task FetchUpdate()
-    {
-        Log.WriteLine($"Fetching update for {ProgramName} started:");
-        var webprogram = new WebScraping(this);
-        await webprogram.FetchUpdate();
-        await this.EditProgramInfo(downloadPage: webprogram.DownloadPage, downloadLink: webprogram.DownloadLink);
-        Log.WriteLine($"Fetching update done for {ProgramName}");
-    }
+    
 
     public async Task DownloadUpdate(IProgress<float> progress)
     {
@@ -317,19 +310,6 @@ internal class ProgramsClass
 
 
 
-
-    public static async Task FetchUpdates(List<ProgramsClass> programslist)
-    {
-        Log.WriteLine("Fetching updates:");
-        foreach (ProgramsClass program in programslist)
-        {
-            var file = program.downloadedfilestr();
-            if ( !string.IsNullOrEmpty(program.LatestVersion) && program.Hidden==0 &&((file == null && program.LatestVersion!=program.InstalledVersion) || (file != null && !file.Contains($"{program.LatestVersion}"))))
-            {
-                await program.FetchUpdate();
-            }
-        }
-    }
 
 
     public static async Task CheckLatestVersions(List<ProgramsClass> programslist)

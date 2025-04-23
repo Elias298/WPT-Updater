@@ -50,7 +50,6 @@ internal class Launch
 
         await ProgramsClass.RefreshLocals(AddedPrograms);
         await ProgramsClass.CheckLatestVersions(AddedPrograms);
-        await ProgramsClass.FetchUpdates(AddedPrograms);
 
     }
 

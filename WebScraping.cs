@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using HtmlAgilityPack;
-using Newtonsoft.Json;
 
 using System;
 using System.Collections.Generic;
@@ -25,7 +24,7 @@ using System.Collections;
 using static OpenQA.Selenium.BiDi.Modules.BrowsingContext.InnerTextLocator;
 using OpenQA.Selenium.BiDi.Modules.Script;
 using OpenQA.Selenium.BiDi.Modules.Input;
-using System.Security.AccessControl;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 
 namespace WPT_Updater;
@@ -70,11 +69,12 @@ internal class WebScraping
     {
         //Gather all useful links
         List<string> Urls = new List<string>();
-        if (string.IsNullOrEmpty(OfficialPage)) { await this.GetOfficialPage(); }
-        if (!string.IsNullOrEmpty(OfficialPage)) { Urls.Add(OfficialPage); }
 
         if (string.IsNullOrEmpty(DownloadPage)) { await this.GetDownloadPage(); }
         if (!string.IsNullOrEmpty(DownloadPage)) { Urls.Add(DownloadPage); }
+
+        if (string.IsNullOrEmpty(OfficialPage)) { await this.GetOfficialPage(); }
+        if (!string.IsNullOrEmpty(OfficialPage)) { Urls.Add(OfficialPage); }
 
         if (string.IsNullOrEmpty(VersionPage)) { Urls.AddRange(await FirstWebResults($"{ProgramName} latest version", 3)); }
         else { Urls.Add(VersionPage); }
@@ -88,11 +88,34 @@ internal class WebScraping
         "early access","canary","nightly","snapshot","debug",
         "draft","staging","revision","rev","demo","test","night"};
 
+        //attributes for link checking
+        var tagAttrMap = new Dictionary<string, string[]>
+        {
+            ["a"] = new[] { "href" },
+            ["link"] = new[] { "href" },
+            ["img"] = new[] { "src", "srcset" },
+            ["script"] = new[] { "src" },
+            ["iframe"] = new[] { "src" },
+            ["source"] = new[] { "src", "srcset" },
+            ["video"] = new[] { "src" },
+            ["audio"] = new[] { "src" },
+            ["embed"] = new[] { "src" },
+            ["object"] = new[] { "data", "codebase" },
+            ["form"] = new[] { "action" },
+            ["track"] = new[] { "src" },
+            ["meta"] = new[] { "content" },
+            ["button"] = new[] { "onclick" },
+            ["div"] = new[] { "onclick" },  // JS-based buttons
+            ["span"] = new[] { "onclick" },
+            ["body"] = new[] { "onload" },
+        };
+
+
 
         int GetFormat(Version version)
         {
             if (version.Revision != -1) { return 4; }
-            else if (version.Build != -1) { return 3; }
+            else if(version.Build != -1){ return 3; }
             else { return 2; }
         }
 
@@ -119,13 +142,17 @@ internal class WebScraping
 
 
 
-        //Regex regex = CreateRegex(InstalledVersionstr);
+        //Version search setup
         Regex regex = new Regex(@"(?<!\.)\d+(?:\.\d+){1,3}(?!\.)");
-
         int totalmatches = 0;
-        Dictionary<Version, (bool, float, string)> results = new();
+        Dictionary<Version,(bool,float,string)> results = new();
         Version InstalledVersion = Version.Parse(InstalledVersionstr);
         string? firstPage = null;
+
+        //Link searcg setup
+        Regex linkregex = new Regex(@"https:\/\/[^\s""'<>]+|\/[^\s""'<>]*\.(exe|zip)");
+        Dictionary<string, string> linkresults = new();
+
 
         foreach (string url in Urls)
         {
@@ -133,33 +160,76 @@ internal class WebScraping
             var doc = new HtmlAgilityPack.HtmlDocument();
             doc.LoadHtml(source);
 
+            Uri uri = new Uri(url);
+            string baseurl = uri.GetLeftPart(UriPartial.Authority);
+
+
+            //1st method to get links:
+            if (linkresults.Count()==0)
+            {
+                foreach (var match in linkregex.Matches(source))
+                {
+                    string? found = match.ToString();
+                    if (found == null) continue;
+                    if (!found.Contains("https"))
+                    {
+                        found = baseurl + found;
+                        linkresults[found] = url;
+                    }
+                    else
+                    {
+                        var o = found.ToLower();
+                        string? ext = null;
+                        if (o.Contains(".exe"))
+                        {
+                            ext = ".exe";
+                        }
+                        else if (o.Contains(".zip")) { ext = ".zip"; }
+                        else if ((o.Contains("id=") && o.Contains("download"))) { linkresults[found] = url; }
+                        if (ext != null && !o.EndsWith(ext))
+                        {
+                            int index = o.IndexOf(ext);
+                            string result = found.Substring(0, index + 4);
+                            linkresults[result] = url;
+                        }
+                        else if(ext!=null)
+                        {
+                            linkresults[found] = url;
+                        }
+                    }
+                }
+            }
+
+
+
             foreach (var node in doc.DocumentNode.Descendants())
             {
-
                 if (node.NodeType != HtmlNodeType.Element)
                     continue;
-                string ownText = GetOwnText(node);
 
+
+
+                string ownText = GetOwnText(node);
                 if (TryGetRegex(ownText, regex, out string? a))
                 {
-
+                    
                     totalmatches += 1;
                     string ver = a!;
                     Version version = Version.Parse(ver);
-                    if (version <= InstalledVersion || version.Major >= InstalledVersion.Major * 10)
+                    if (version <= InstalledVersion || version.Major>=InstalledVersion.Major*10)
                     {
-                        if ((version == InstalledVersion) && firstPage == null) { firstPage = url; }
+                        if ((version == InstalledVersion) && firstPage==null) {firstPage = url;}
                         continue;
                     }
 
                     string regexstring = regex.ToString();
-                    var specificwords = new List<string> { regexstring + "b", "b" + regexstring, regexstring + "a", "a" + regexstring };
+                    var specificwords = new List<string> { regexstring+"b", "b"+regexstring, regexstring + "a", "a" + regexstring };
                     var betakeywords = BetaKeywords;
                     betakeywords.AddRange(specificwords);
 
                     bool containsbeta = betakeywords.Any(s => ownText.Contains(s));
                     bool beta = false;
-                    if (containsbeta) { beta = true; }
+                    if (containsbeta) {beta = true;}
 
                     if (results.ContainsKey(version))
                     {
@@ -167,17 +237,27 @@ internal class WebScraping
                         var currentcount = (results[version]).Item2;
                         string website = (results[version]).Item3;
 
-                        if (beta) { results[version] = (true, currentcount + 1, website); }
-                        else { results[version] = (currentbeta, currentcount + 1, website); }
+                        if (beta) { results[version]=( true,currentcount+1, website ); }
+                        else { results[version] = ( currentbeta,currentcount+1, website ); }
                     }
                     else
                     {
-                        results[version] = (beta, 0, url);
+                        results[version] = (beta , 0, url);
                     }
                 }
             }
 
         }
+
+        //adding the link to the program start
+        foreach (string url in linkresults.Keys.ToList())
+        {
+            this.DownloadLink = url;
+            this.DownloadPage = linkresults[url];
+            Console.WriteLine($"{url} {linkresults[url]}");
+            break;
+        }
+        //adding link to the program end
 
         if (CheckBetas == 0)
         {
@@ -186,8 +266,8 @@ internal class WebScraping
                 if (results[ver].Item1) { results.Remove(ver); }
             }
         }
-
-
+        
+        // attention pr check link
         if (results.Count == 0)
         {
             this.LatestVersion = InstalledVersion.ToString();
@@ -195,7 +275,7 @@ internal class WebScraping
             return;
         }
 
-        List<Version> versionstrie = results.Keys.ToList();
+        List < Version > versionstrie = results.Keys.ToList();
         versionstrie.Sort();
 
         float matchesratio = 100 / totalmatches;
@@ -206,10 +286,10 @@ internal class WebScraping
             bool beta = results[version].Item1;
             float count = results[version].Item2;
             string website = results[version].Item3;
-            if (GetFormat(version) != GetFormat(InstalledVersion)) { count = count / 2; } //remove points if format doesnt match
+            if (GetFormat(version) != GetFormat(InstalledVersion)){ count = count / 2; } //remove points if format doesnt match
 
             //final points
-            results[version] = (beta, (count * matchesratio) * i, website);
+            results[version] = (beta, (count * matchesratio)*i, website);
         }
 
         var maxItem = results.MaxBy(kv => kv.Value.Item2);
@@ -232,106 +312,9 @@ internal class WebScraping
         this.DownloadPage = downloadpage[0];
     }
 
-    public async Task FetchUpdate()
-    {
-        // Hardcoded special case for Git
-        if (ProgramName.ToLower().Contains("git"))
-        {
-            try
-            {
-                using HttpClient client = new();
-                string json = await client.GetStringAsync("https://api.github.com/repos/git-for-windows/git/releases/latest");
-
-                dynamic release = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
-                foreach (var asset in release.assets)
-                {
-                    string name = asset.name;
-                    string browserDownloadUrl = asset.browser_download_url;
-
-                    if (name.EndsWith("64-bit.exe"))
-                    {
-                        this.DownloadLink = browserDownloadUrl;
-                        return;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error fetching Git download link: " + ex.Message);
-            }
-        }
 
 
-        // Hardcoded special case for Notepad++
-        if (ProgramName.ToLower().Contains("notepad++") || ProgramName.ToLower().Contains("notepadpp"))
-        {
-            string latest = this.LatestVersion ?? "latest";
-            this.DownloadLink = $"https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v{latest}/npp.{latest}.Installer.x64.exe";
-            return;
-        }
-
-        // Normal behavior for other apps (like 7-Zip)
-        List<string> urlsToCheck = new List<string>();
-        if (!string.IsNullOrEmpty(VersionPage)) urlsToCheck.Add(VersionPage);
-        if (!string.IsNullOrEmpty(DownloadPage)) urlsToCheck.Add(DownloadPage);
-
-        string latestDownloadLink = string.Empty;
-        string? version = this.LatestVersion;
-
-        foreach (string url in urlsToCheck)
-        {
-            string pageSource = await GetPageSource(url);
-            if (!string.IsNullOrEmpty(pageSource))
-            {
-                var htmlDoc = new HtmlAgilityPack.HtmlDocument();
-                htmlDoc.LoadHtml(pageSource);
-
-                var links = htmlDoc.DocumentNode.SelectNodes("//a[@href]");
-                if (links == null) continue;
-
-                foreach (var link in links)
-                {
-                    string? href = link.GetAttributeValue("href", null);
-                    if (string.IsNullOrEmpty(href)) continue;
-
-                    if (!href.StartsWith("http"))
-                    {
-                        Uri baseUri = new Uri(url);
-                        href = new Uri(baseUri, href).ToString();
-                    }
-
-                    if (!string.IsNullOrEmpty(version) && href.ToLower().Contains(version.ToLower()) &&
-                        (href.EndsWith(".exe") || href.EndsWith(".zip") || href.EndsWith(".msi")))
-                    {
-                        this.DownloadLink = href;
-                        return;
-                    }
-
-                    if (string.IsNullOrEmpty(this.DownloadLink) &&
-                        (href.EndsWith(".exe") || href.EndsWith(".zip") || href.EndsWith(".msi")))
-                    {
-                        this.DownloadLink = href;
-                    }
-                }
-            }
-        }
-
-        if (string.IsNullOrEmpty(this.DownloadLink))
-        {
-            Console.WriteLine("No download link found for the latest version.");
-        }
-        else
-        {
-            Console.WriteLine($"Download link found: {this.DownloadLink}");
-        }
-    }
-
-
-
-
-
-
-
+    
     public static async Task<List<string>> FirstWebResults(string searchQuery, int n)
     {
         IWebDriver driver = new ChromeDriver(Seloptions());
