@@ -27,12 +27,30 @@ public class Installer
         return path;
     }
 
-    public static void SetDownloadPath(string path = "")
+    public static void SetDownloadPath_helper(string path = "")
     {
         var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         config.AppSettings.Settings["Downloadpath"].Value = path;
         config.Save(ConfigurationSaveMode.Modified);
         ConfigurationManager.RefreshSection("appSettings");
+    }
+    public void SetDownloadPath()
+    {
+        using (var dialog = new FolderBrowserDialog())
+        {
+            dialog.Description = "Select a folder";
+            dialog.UseDescriptionForTitle = true;
+            dialog.ShowNewFolderButton = true;
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                 SetDownloadPath_helper(dialog.SelectedPath);
+            }
+            else
+            {
+                SetDownloadPath_helper("");
+            }
+        }
     }
 
     public Installer(int maxConcurrentDownloads)

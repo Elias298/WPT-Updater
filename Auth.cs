@@ -17,55 +17,6 @@ namespace WPT_Updater
         public static int ProfileNumber = GetProfileNumber();
         public static string UserName = Environment.UserName;
 
-
-        public static List<string> GetProfiles()
-        {
-            Log.WriteLine($"Trying to find chrome profiles");
-            List<string> profilelist = new();
-            string localStatePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                                             "Google", "Chrome", "User Data", "Local State");
-            Log.WriteLine($"From {localStatePath}");
-
-            if (!File.Exists(localStatePath))
-            {
-                Log.WriteLine("Local State file not found.");
-                return profilelist;
-            }
-
-            try
-            {
-                string json = File.ReadAllText(localStatePath);
-                JObject jsonObj = JObject.Parse(json);
-
-                // Ensure profile key exists
-                if (jsonObj?["profile"]?["info_cache"] is not JObject profiles)
-                {
-                    Log.WriteLine("Profile key doesn't exist");
-                    return profilelist;
-                }
-
-                Log.WriteLine("Chrome Profiles:");
-                
-                foreach (var profile in profiles.Properties())
-                {
-                    string? profileName = profile.Value?["name"]?.ToString();
-                    if (!string.IsNullOrEmpty(profileName))
-                    {
-                        profilelist.Add(profileName);
-                        Log.Write($"{profileName} , ");
-                    }
-                }
-                Log.WriteLine("");
-                return profilelist;
-
-            }
-            catch (Exception ex)
-            {
-                Log.WriteLine("Error reading Local State file: " + ex.Message);
-                return profilelist;
-            }
-        }
-
         public static void SetProfileNumber_helper(int profilenumber=1)
         { 
             Log.WriteLine($"setting profile number to {profilenumber}");
@@ -73,31 +24,12 @@ namespace WPT_Updater
             config.AppSettings.Settings["Profile"].Value = profilenumber.ToString();
             config.Save(ConfigurationSaveMode.Modified);
             ConfigurationManager.RefreshSection("appSettings");
+            ProfileNumber = profilenumber;
             Log.WriteLine($"Profile number set to {profilenumber}");
             Console.WriteLine("Profile number set to " + profilenumber);
         }
 
-        public static void SetProfileNumber()
-        {
-            List<string> profiles = GetProfiles();
-
-            string selected = ShowSelectionDialog(profiles);
-
-            int profileNum = 0;
-
-            for (int i = 0; i < profiles.Count; i++)
-            {
-                if (profiles[i].Equals(selected))
-                {
-                    profileNum = i;
-                    break;
-                }
-            }
-
-            Console.WriteLine("Selected profile: " + selected + "\nProfile number: " + profileNum);
-
-            SetProfileNumber_helper(profileNum);
-        }
+        
 
         public static int GetProfileNumber()
         {
@@ -109,53 +41,51 @@ namespace WPT_Updater
             return profile;
         }
 
-        //this method takes as an input a list of strings (from getProfiles()), produces the box with the buttons, and returns the 
-        //string chosen by the user
 
-        static string ShowSelectionDialog(List<string> items)
+        public static int SetProfileNumber(string title = "Enter Chrome Profile number", string message = "Enter your Chrome Profile number")
         {
-            using (var form = new ButtonSelectionForm(items))
+            int result;
+
+            while (true)
             {
-                var result = form.ShowDialog();
-                return result == DialogResult.OK ? form.SelectedItem : null;
-            }
-        }
-
-        //this class defines the box containing the different buttons
-
-        public class ButtonSelectionForm : Form
-        {
-            public string SelectedItem { get; private set; }
-
-            public ButtonSelectionForm(List<string> items)
-            {
-                this.Text = "Select an Option";
-                this.Size = new Size(300, 400);
-                this.StartPosition = FormStartPosition.CenterScreen;
-                this.AutoScroll = true;
-
-                int yOffset = 10;
-                foreach (var item in items)
+                Form form = new Form()
                 {
-                    var button = new Button
-                    {
-                        Text = item,
-                        Size = new Size(250, 40),
-                        Location = new Point(10, yOffset)
-                    };
+                    Width = 300,
+                    Height = 160,
+                    Text = title,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    StartPosition = FormStartPosition.CenterScreen,
+                    MinimizeBox = false,
+                    MaximizeBox = false
+                };
 
-                    button.Click += (sender, e) =>
-                    {
-                        SelectedItem = ((Button)sender).Text;
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
-                    };
+                Label label = new Label() { Left = 10, Top = 20, Text = message, Width = 260 };
+                TextBox inputBox = new TextBox() { Left = 10, Top = 50, Width = 260 };
+                Button okButton = new Button() { Text = "OK", Left = 100, Width = 80, Top = 80, DialogResult = DialogResult.OK };
 
-                    this.Controls.Add(button);
-                    yOffset += 50;
+                form.Controls.Add(label);
+                form.Controls.Add(inputBox);
+                form.Controls.Add(okButton);
+                form.AcceptButton = okButton;
+
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    if (int.TryParse(inputBox.Text, out result) && result >= 0)
+                    {
+                        Auth.SetProfileNumber_helper(result);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid input. Profile number is a positive integer.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+                else
+                {
+                    Auth.SetProfileNumber_helper(Auth.GetProfileNumber());
                 }
             }
         }
+
 
 
     }
