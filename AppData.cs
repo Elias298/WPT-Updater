@@ -145,6 +145,15 @@ internal class AppData
         }
     }
 
+    public void SetProgramHidden(string programKey, int hiddenValue)
+    {
+        using (var connection = new SQLiteConnection(connectionString))
+        {
+            connection.Execute("UPDATE Programs SET Hidden = @Hidden WHERE ProgramKey = @ProgramKey",
+                new { Hidden = hiddenValue, ProgramKey = programKey });
+        }
+    }
+
     public ProgramsClass GetProgram(string Key)
     {
         using (var connection = new SQLiteConnection(connectionString))

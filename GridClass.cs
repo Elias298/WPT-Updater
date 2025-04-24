@@ -13,14 +13,17 @@ namespace WPT_Updater
         public string? InstalledVersion { get; set; } = "";
         public string? InstallDate { get; set; }
 
-        //require web search attributes
+        // require web search attributes
         public string? LatestVersion { get; set; }
         public string? OfficialPage { get; set; }
         public string? VersionPage { get; set; }
         public string? DownloadPage { get; set; }
         public string? DownloadLink { get; set; }
 
-        //authentication attributes
+        // authentication attributes
         public int? CheckBetas { get; set; }
+
+        // hidden flag from the database
+        public int? Hidden { get; set; }    
     }
 }

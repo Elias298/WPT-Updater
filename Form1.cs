@@ -58,14 +58,10 @@
                 dataGridViewInstalled.CellValueChanged += DataGridView_CellValueChanged;
                 dataGridViewUpdates.CellValueChanged += DataGridView_CellValueChanged;
 
-                dataGridViewUpdates.ColumnHeaderMouseClick += dataGridViewUpdates_ColumnHeaderMouseClick;
-                dataGridViewInstalled.ColumnHeaderMouseClick += dataGridViewInstalled_ColumnHeaderMouseClick;
-
-                // Clear and add the "Hide Column" menu item dynamically
-                contextMenuStripColumn.Items.Clear();
-                contextMenuStripColumn.Items.Add("Hide Column", null, HideColumnToolStripMenuItem_Click);
-
-
+                Scan_New_Apps.Click += Scan_New_Apps_Click;
+                Select_account.Click += Select_account_Click;
+                Download_Path.Click += Download_Path_Click;
+                Check_For_Updates.Click += Check_For_Updates_Click;
         }
 
         // These lists will store the indices of hidden rows for Updates and Installed grids
@@ -73,42 +69,97 @@
             private List<int> hiddenRowIndicesInstalled = new List<int>();
 
 
-            private void LoadGridData()
+        private void LoadGridData()
+        {
+            // Get installed programs from the database, ensuring the data type is GridClass
+            allPrograms = GetInstalledProgramsFromDatabase();
+
+            // Bind the data to both DataGridViews
+            dataGridViewInstalled.AutoGenerateColumns = true;
+            dataGridViewInstalled.DataSource = allPrograms;
+
+            dataGridViewUpdates.AutoGenerateColumns = true;
+            dataGridViewUpdates.DataSource = allPrograms;
+
+            // Hide ProgramKey column in both DataGridViews
+            if (dataGridViewInstalled.Columns["ProgramKey"] != null)
+                dataGridViewInstalled.Columns["ProgramKey"].Visible = false;
+
+            if (dataGridViewUpdates.Columns["ProgramKey"] != null)
+                dataGridViewUpdates.Columns["ProgramKey"].Visible = false;
+
+            // Set column visibility and properties for other columns
+            if (dataGridViewInstalled.Columns["CheckBetas"] != null)
             {
-                allPrograms = GetInstalledProgramsFromDatabase();
-                dataGridViewInstalled.AutoGenerateColumns = true;
-                dataGridViewInstalled.DataSource = allPrograms;
-
-                if (dataGridViewInstalled.Columns["ProgramKey"] != null)
-                    dataGridViewInstalled.Columns["ProgramKey"].Visible = false;
-
-                if (dataGridViewInstalled.Columns["CheckBetas"] != null)
-                {
-                    dataGridViewInstalled.Columns["CheckBetas"].HeaderText = "Check Betas";
-                    dataGridViewInstalled.Columns["CheckBetas"].ReadOnly = true;
-                }
-
-                if (dataGridViewUpdates.Columns["CheckBetas"] != null)
-                {
-                    dataGridViewUpdates.Columns["CheckBetas"].HeaderText = "Check Betas";
-                    dataGridViewUpdates.Columns["CheckBetas"].ReadOnly = true;
-                }
-
-                if (!dataGridViewInstalled.Columns.Contains("DownloadStatus"))
-                {
-                    DataGridViewTextBoxColumn progressColumn = new()
-                    {
-                        Name = "DownloadStatus",
-                        HeaderText = "Progress (%)",
-                        ReadOnly = true
-                    };
-                    dataGridViewInstalled.Columns.Insert(0, progressColumn);
-                }
-
-                UpdateProgressDisplay();
+                dataGridViewInstalled.Columns["CheckBetas"].HeaderText = "Check Betas";
+                dataGridViewInstalled.Columns["CheckBetas"].ReadOnly = true;
             }
 
-            private void LoadUpdatesGridData()
+            if (dataGridViewUpdates.Columns["CheckBetas"] != null)
+            {
+                dataGridViewUpdates.Columns["CheckBetas"].HeaderText = "Check Betas";
+                dataGridViewUpdates.Columns["CheckBetas"].ReadOnly = true;
+            }
+
+            // Optionally, add the DownloadStatus column to the installed grid if needed
+            if (!dataGridViewInstalled.Columns.Contains("DownloadStatus"))
+            {
+                DataGridViewTextBoxColumn progressColumn = new()
+                {
+                    Name = "DownloadStatus",
+                    HeaderText = "Progress (%)",
+                    ReadOnly = true
+                };
+                dataGridViewInstalled.Columns.Insert(0, progressColumn);
+            }
+
+            // Ensure all columns are correctly loaded and set their visibility
+            UpdateProgressDisplay();
+        }
+
+
+
+
+        private async void Hidden_Apps_Click(object sender, EventArgs e)
+        {
+            // Reverse the Hidden flag for all programs in the list
+            foreach (var program in allPrograms)
+            {
+                program.Hidden = program.Hidden == 1 ? 0 : 1;
+            }
+
+            // Update the Hidden status in the database for all programs
+            await UpdateHiddenStatusInDatabase(allPrograms);
+
+            // Refresh DataGridViews to reflect the changes
+            LoadGridData();
+        }
+
+
+
+
+
+        private async Task UpdateHiddenStatusInDatabase(List<GridClass> programsList)
+        {
+            string connectionString = "Data Source=Programs.db";
+
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                await connection.OpenAsync();
+
+                foreach (var program in programsList)
+                {
+                    // Update the Hidden column in the database for each program
+                    string updateQuery = "UPDATE Programs SET Hidden = @Hidden WHERE ProgramKey = @ProgramKey";
+                    await connection.ExecuteAsync(updateQuery, new { Hidden = program.Hidden, ProgramKey = program.ProgramKey });
+                }
+            }
+
+            Log.WriteLine("Hidden column updated successfully.");
+        }
+
+
+        private void LoadUpdatesGridData()
             {
                 var updates = allPrograms
                     .Where(p => p.InstalledVersion != p.LatestVersion)
@@ -145,17 +196,19 @@
             }
 
 
-            private List<GridClass> GetInstalledProgramsFromDatabase()
-            {
-                string connectionString = "Data Source=Programs.db";
+        private List<GridClass> GetInstalledProgramsFromDatabase()
+        {
+            string connectionString = "Data Source=Programs.db";
 
-                using var connection = new SQLiteConnection(connectionString);
-                connection.Open();
+            using var connection = new SQLiteConnection(connectionString);
+            connection.Open();
 
-                return connection.Query<GridClass>("SELECT * FROM Programs WHERE CheckBetas = 0").ToList();
-            }
+            return connection.Query<GridClass>("SELECT * FROM Programs").ToList();
+        }
 
-            private void ApplySearchFilter()
+
+
+        private void ApplySearchFilter()
             {
                 string searchText = textBox1.Text.ToLower();
 
@@ -238,316 +291,163 @@
                 dataGridViewInstalled.ClearSelection();
                 dataGridViewInstalled.Rows[e.RowIndex].Selected = true;
 
-                // Retrieve the ProgramKey from the right-clicked row's bound data (GridClass object)
-                string programKey = ((GridClass)dataGridViewInstalled.Rows[e.RowIndex].DataBoundItem).ProgramKey;
+                // Retrieve the bound GridClass object
+                var gridProgram = dataGridViewInstalled.Rows[e.RowIndex].DataBoundItem as GridClass;
 
-                // Retrieve the Program object using the ProgramKey
-                var program = ProgramsClass.dbhelper.GetProgram(programKey);
+                if (gridProgram == null)
+                    return;
 
-                // Store the Program object in the context menu's Tag for later use
-                contextMenuStripInstalled.Tag = program;
+                // Store GridClass object in context menu Tag
+                contextMenuStripInstalled.Tag = gridProgram;
 
-                // Clear existing items before adding new ones
+                // Clear existing context menu items
                 contextMenuStripInstalled.Items.Clear();
 
-                // Preserve existing menu item: Check for Updates
+                // Add "Check for Updates"
                 contextMenuStripInstalled.Items.Add("Check for Updates");
 
-                // Add new menu item: Hide Row
+                // Add "Hide Row"
                 contextMenuStripInstalled.Items.Add("Hide Row", null, (s, ev) =>
                 {
-                    if (dataGridViewInstalled.CurrentRow != null)
+                    if (contextMenuStripInstalled.Tag is GridClass programToHide)
                     {
-                        dataGridViewInstalled.CurrentRow.Visible = false;
-                        hiddenRowIndicesInstalled.Add(dataGridViewInstalled.CurrentRow.Index);
+                        // Update hidden status in DB
+                        ProgramsClass.dbhelper.SetProgramHidden(programToHide.ProgramKey, 1);
+
+                        // Reload and bind only visible programs
+                        dataGridViewInstalled.DataSource = ProgramsClass.dbhelper
+                            .GetAllPrograms()
+                            .Where(p => p.Hidden == 0)
+                            .ToList();
                     }
                 });
 
-                // Show the context menu at the current mouse position
+                // Show context menu at cursor position
                 contextMenuStripInstalled.Show(Cursor.Position);
             }
         }
 
 
-        // Handling right-click for the updates programs grid
+
         private void dataGridViewUpdates_CellMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
             {
-                if (e.Button == MouseButtons.Right && e.RowIndex >= 0)
+                dataGridViewUpdates.ClearSelection();
+                dataGridViewUpdates.Rows[e.RowIndex].Selected = true;
+
+                var gridProgram = dataGridViewUpdates.Rows[e.RowIndex].DataBoundItem as GridClass;
+
+                if (gridProgram == null)
+                    return;
+
+                // Get full program info from db
+                var program = ProgramsClass.dbhelper.GetProgram(gridProgram.ProgramKey);
+                if (program == null)
+                    return;
+
+                contextMenuStripUpdates.Tag = program;
+
+                // Clear previous context menu items
+                contextMenuStripUpdates.Items.Clear();
+
+                // Add "Hide Row"
+                contextMenuStripUpdates.Items.Add("Hide Row", null, (s, ev) =>
                 {
-                    dataGridViewUpdates.ClearSelection();
-                    dataGridViewUpdates.Rows[e.RowIndex].Selected = true;
-
-                    string key = ((GridClass)dataGridViewUpdates.Rows[e.RowIndex].DataBoundItem).ProgramKey;
-                    var program = ProgramsClass.dbhelper.GetProgram(key);
-                    contextMenuStripUpdates.Tag = program;
-
-                    // Clear previous items
-                    contextMenuStripUpdates.Items.Clear();
-
-                    // Always add "Hide Row" option
-                    contextMenuStripUpdates.Items.Add("Hide Row", null, (s, ev) =>
+                    if (contextMenuStripUpdates.Tag is ProgramsClass p)
                     {
-                        if (dataGridViewUpdates.CurrentRow != null)
-                            dataGridViewUpdates.CurrentRow.Visible = false;
-                    });
+                        ProgramsClass.dbhelper.SetProgramHidden(p.ProgramKey, 1);
 
-                    // Get current download state
-                    var state = program.GetDownloadState();
+                        // Rebind DataGridView with visible items only
+                        dataGridViewUpdates.DataSource = ProgramsClass.dbhelper
+                            .GetAllPrograms()
+                            .Where(pr => pr.Hidden == 0)
+                            .ToList();
+                    }
+                });
 
-                    switch (state)
+                // Add download options based on current download state
+                var state = program.GetDownloadState();
+
+                switch (state)
+                {
+                    case DownloadTask.DownloadState.NotAdded:
+                    case DownloadTask.DownloadState.NotStarted:
+                        contextMenuStripUpdates.Items.Add("Download", null, OnDownload_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Downloading:
+                        contextMenuStripUpdates.Items.Add("Pause", null, OnPause_Click);
+                        contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Paused:
+                        contextMenuStripUpdates.Items.Add("Resume", null, OnResume_Click);
+                        contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Completed:
+                        contextMenuStripUpdates.Items.Add("Re-download", null, OnDownload_Click);
+                        break;
+
+                    case DownloadTask.DownloadState.Canceled:
+                        contextMenuStripUpdates.Items.Add("Retry Download", null, OnDownload_Click);
+                        break;
+                }
+
+                // Show context menu at cursor
+                contextMenuStripUpdates.Show(Cursor.Position);
+            }
+        }
+
+
+        private void HideRow_Click(object sender, EventArgs e)
+        {
+            if (dataGridViewInstalled.SelectedRows.Count > 0)
+            {
+                var row = dataGridViewInstalled.SelectedRows[0];
+                var program = row.DataBoundItem as GridClass;
+
+                if (program != null)
+                {
+                    // Set Hidden column to 1 (hide the app)
+                    program.Hidden = 1;
+
+                    using (var connection = new SQLiteConnection("Data Source=Programs.db"))
                     {
-                        case DownloadTask.DownloadState.NotAdded:
-                        case DownloadTask.DownloadState.NotStarted:
-                            contextMenuStripUpdates.Items.Add("Download", null, OnDownload_Click);
-                            break;
-
-                        case DownloadTask.DownloadState.Downloading:
-                            contextMenuStripUpdates.Items.Add("Pause", null, OnPause_Click);
-                            contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
-                            break;
-
-                        case DownloadTask.DownloadState.Paused:
-                            contextMenuStripUpdates.Items.Add("Resume", null, OnResume_Click);
-                            contextMenuStripUpdates.Items.Add("Cancel", null, OnCancel_Click);
-                            break;
-
-                        case DownloadTask.DownloadState.Completed:
-                            contextMenuStripUpdates.Items.Add("Re-download", null, OnDownload_Click);
-                            break;
-
-                        case DownloadTask.DownloadState.Canceled:
-                            contextMenuStripUpdates.Items.Add("Retry Download", null, OnDownload_Click);
-                            break;
+                        connection.Open();
+                        connection.Execute("UPDATE Programs SET Hidden = 1 WHERE ProgramKey = @ProgramKey", new { ProgramKey = program.ProgramKey });
                     }
 
-                    // Show the context menu at the mouse cursor
-                    contextMenuStripUpdates.Show(Cursor.Position);
+                    // Reload the grid to reflect the updated hidden state
+                    LoadGridData();
                 }
             }
-
-            private bool areHiddenAppsVisible = false; // Flag to track the visibility of hidden apps
-
-            private void ToggleHiddenApps_Click(object sender, EventArgs e)
-            {
-                if (areHiddenAppsVisible)
-                {
-                    // Hide the rows that were previously hidden
-                    RestoreHiddenRows(dataGridViewUpdates, hiddenRowIndicesUpdates);
-                    RestoreHiddenRows(dataGridViewInstalled, hiddenRowIndicesInstalled);
-                }
-                else
-                {
-                    // Invert the visibility (show hidden and hide visible)
-                    InvertRowVisibility(dataGridViewUpdates, hiddenRowIndicesUpdates);
-                    InvertRowVisibility(dataGridViewInstalled, hiddenRowIndicesInstalled);
-                }
-
-                // Toggle the state
-                areHiddenAppsVisible = !areHiddenAppsVisible;
-            }
-            
-            private void InvertRowVisibility(DataGridView gridView, List<int> hiddenIndices)
-            {
-                foreach (DataGridViewRow row in gridView.Rows)
-                {
-                    int rowIndex = row.Index;
-                    if (row.Visible)
-                    {
-                        row.Visible = false;
-                        hiddenIndices.Add(rowIndex); // Add to the hidden list
-                    }
-                    else
-                    {
-                        row.Visible = true;
-                    }
-                }
-            }
-
-            private List<int> hiddenRowIndexes = new List<int>(); // To track hidden rows by index
-            private List<string> hiddenColumnNames = new List<string>(); // To track hidden columns by name
-
-        private void RestoreHiddenRows(DataGridView gridView, List<int> hiddenIndices)
-            {
-                foreach (int rowIndex in hiddenIndices)
-                {
-                    gridView.Rows[rowIndex].Visible = false;
-                }
-            }
-
-        private void dataGridViewUpdates_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        }    
+        private void LoadInstalledTab()
         {
-            if (e.Button == MouseButtons.Right && e.ColumnIndex >= 0)
-            {
-                var column = dataGridViewUpdates.Columns[e.ColumnIndex];
-                contextMenuStripColumn.Tag = column;
-                contextMenuStripColumn.Show(Cursor.Position);
-            }
+            var allPrograms = ProgramsClass.dbhelper.GetAllPrograms();
+            dataGridViewInstalled.DataSource = allPrograms
+                .Where(p => p.Hidden == 0)
+                .ToList();
         }
 
-        private void dataGridViewInstalled_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        private void LoadUpdatesTab()
         {
-            if (e.Button == MouseButtons.Right && e.ColumnIndex >= 0)
-            {
-                var column = dataGridViewInstalled.Columns[e.ColumnIndex];
-                contextMenuStripColumn.Tag = column;
-                contextMenuStripColumn.Show(Cursor.Position);
-            }
-        }
-
-
-        private void HideColumnToolStripMenuItem_Click(object? sender, EventArgs e)
-        {
-            // Get the column that was right-clicked using the ColumnIndex
-            int columnIndex = dataGridViewUpdates.SelectedCells[0].ColumnIndex;
-
-            if (columnIndex >= 0)  // Ensure it's a valid column
-            {
-                string columnName = dataGridViewUpdates.Columns[columnIndex].Name;
-
-                // Hide the column
-                dataGridViewUpdates.Columns[columnName].Visible = false;
-
-                // Add the column name to the hidden columns list
-                if (!hiddenColumnNames.Contains(columnName))
-                {
-                    hiddenColumnNames.Add(columnName);
-                }
-            }
-        }
-
-
-        private void HideRowToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // Get the row that was right-clicked using the RowIndex
-            int rowIndex = dataGridViewUpdates.SelectedCells[0].RowIndex;
-
-            if (rowIndex >= 0)  // Ensure it's a valid row
-            {
-                // Hide the row
-                dataGridViewUpdates.Rows[rowIndex].Visible = false;
-
-                // Add the row index to the hidden rows list
-                if (!hiddenRowIndexes.Contains(rowIndex))
-                {
-                    hiddenRowIndexes.Add(rowIndex);
-                }
-            }
-        }
-
-        // Track hidden rows and columns for both DataGridViews
-        private List<int> hiddenRowIndexesInstalled = new List<int>();
-        private List<string> hiddenColumnNamesInstalled = new List<string>();
-
-        private List<int> hiddenRowIndexesUpdates = new List<int>();
-        private List<string> hiddenColumnNamesUpdates = new List<string>();
-
-        private void hiddenAppsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // Show hidden rows and columns in Installed tab
-            foreach (var rowIndex in hiddenRowIndexesInstalled)
-            {
-                dataGridViewInstalled.Rows[rowIndex].Visible = true;
-            }
-
-            foreach (var columnName in hiddenColumnNamesInstalled)
-            {
-                dataGridViewInstalled.Columns[columnName].Visible = true;
-            }
-
-            // Show hidden rows and columns in Updates tab
-            foreach (var rowIndex in hiddenRowIndexesUpdates)
-            {
-                dataGridViewUpdates.Rows[rowIndex].Visible = true;
-            }
-
-            foreach (var columnName in hiddenColumnNamesUpdates)
-            {
-                dataGridViewUpdates.Columns[columnName].Visible = true;
-            }
-
-            // Optionally: You could also refresh both DataGridViews
-            dataGridViewInstalled.Refresh();
-            dataGridViewUpdates.Refresh();
-        }
-
-        // Hide rows and columns in Installed tab
-        private void HideRowColumnInstalled(object sender, EventArgs e)
-        {
-            var selectedRowIndex = dataGridViewInstalled.SelectedCells[0].RowIndex;
-            var selectedColumnName = dataGridViewInstalled.Columns[dataGridViewInstalled.SelectedCells[0].ColumnIndex].Name;
-
-            // Hide the row
-            if (!hiddenRowIndexesInstalled.Contains(selectedRowIndex))
-            {
-                hiddenRowIndexesInstalled.Add(selectedRowIndex);
-                dataGridViewInstalled.Rows[selectedRowIndex].Visible = false;
-            }
-
-            // Hide the column
-            if (!hiddenColumnNamesInstalled.Contains(selectedColumnName))
-            {
-                hiddenColumnNamesInstalled.Add(selectedColumnName);
-                dataGridViewInstalled.Columns[selectedColumnName].Visible = false;
-            }
-        }
-
-        // Hide rows and columns in Updates tab
-        private void HideRowColumnUpdates(object sender, EventArgs e)
-        {
-            var selectedRowIndex = dataGridViewUpdates.SelectedCells[0].RowIndex;
-            var selectedColumnName = dataGridViewUpdates.Columns[dataGridViewUpdates.SelectedCells[0].ColumnIndex].Name;
-
-            // Hide the row
-            if (!hiddenRowIndexesUpdates.Contains(selectedRowIndex))
-            {
-                hiddenRowIndexesUpdates.Add(selectedRowIndex);
-                dataGridViewUpdates.Rows[selectedRowIndex].Visible = false;
-            }
-
-            // Hide the column
-            if (!hiddenColumnNamesUpdates.Contains(selectedColumnName))
-            {
-                hiddenColumnNamesUpdates.Add(selectedColumnName);
-                dataGridViewUpdates.Columns[selectedColumnName].Visible = false;
-            }
+            var allPrograms = ProgramsClass.dbhelper.GetAllPrograms();
+            dataGridViewUpdates.DataSource = allPrograms
+                .Where(p => p.Hidden == 0 && !string.IsNullOrEmpty(p.LatestVersion) && p.InstalledVersion != p.LatestVersion)
+                .ToList();
         }
 
         private async void Check_For_Updates_Click(object sender, EventArgs e)
         {
-            // Get all programs and store in a list
             var programsList = ProgramsClass.dbhelper.GetAllPrograms();
-
-            // Run the check for updates using the list
             await ProgramsClass.CheckLatestVersions(programsList);
-        }
 
-        private void Hidden_Apps_Click(object sender, EventArgs e)
-        {
-            // Show hidden rows and columns in Installed tab
-            foreach (var rowIndex in hiddenRowIndexesInstalled)
-            {
-                dataGridViewInstalled.Rows[rowIndex].Visible = true;
-            }
-
-            foreach (var columnName in hiddenColumnNamesInstalled)
-            {
-                dataGridViewInstalled.Columns[columnName].Visible = true;
-            }
-
-            // Show hidden rows and columns in Updates tab
-            foreach (var rowIndex in hiddenRowIndexesUpdates)
-            {
-                dataGridViewUpdates.Rows[rowIndex].Visible = true;
-            }
-
-            foreach (var columnName in hiddenColumnNamesUpdates)
-            {
-                dataGridViewUpdates.Columns[columnName].Visible = true;
-            }
-
-            // Optionally: You could also refresh both DataGridViews
-            dataGridViewInstalled.Refresh();
-            dataGridViewUpdates.Refresh();
+            // Reload UI after checking
+            LoadInstalledTab();
+            LoadUpdatesTab();
         }
 
         private async void OnCheckForUpdate_Click(object? sender, EventArgs e)
@@ -637,18 +537,37 @@
                 LoadUpdatesGridData(); // or whatever method you use to refresh that DataGridView
             }
 
-            private void scanForNewAppsToolStripMenuItem_Click(object sender, EventArgs e)
-            {
-                Application.Run(new ButtonBoxForm());
-            
-            }
+        private void Scan_New_Apps_Click(object sender, EventArgs e)
+        {
+            ButtonBoxForm form = new ButtonBoxForm();
+            form.Show(); // Opens the form in non-modal mode
+        }
 
-            private void selectAccountToolStripMenuItem_Click(object sender, EventArgs e)
-            {
-                Auth.SetProfileNumber();
-            }
 
-            private void downloadPathToolStripMenuItem_Click(object sender, EventArgs e)
+
+        private bool isProfileSet = false; // Flag to track if the profile has been set
+
+        private void Select_account_Click(object sender, EventArgs e)
+        {
+            if (!isProfileSet)
+            {
+                // Run SetProfileNumber asynchronously to avoid blocking the UI
+                Task.Run(() =>
+                {
+                    Auth.SetProfileNumber();
+                    isProfileSet = true; // Set the flag once the profile is set
+                });
+            }
+            else
+            {
+                MessageBox.Show("Profile has already been set.");
+            }
+        }
+
+
+
+
+        private void Download_Path_Click(object sender, EventArgs e)
             {
                 Installer.SetDownloadPath();
             }
@@ -660,16 +579,22 @@
                 // Right-click on headers handled here (existing code remains unchanged)
             }
 
-            private void UpdateProgramHiddenStatus(string programKey, bool isHidden)
+        private void UpdateHiddenStatusInDatabase()
+        {
+            string connectionString = "Data Source=Programs.db";
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                using var connection = new SQLiteConnection("Data Source=Programs.db");
                 connection.Open();
-
-                connection.Execute("UPDATE Programs SET CheckBetas = @Hidden WHERE ProgramKey = @Key",
-                    new { Hidden = isHidden ? 1 : 0, Key = programKey });
+                foreach (var program in allPrograms)
+                {
+                    var query = "UPDATE Programs SET Hidden = @Hidden WHERE ProgramKey = @ProgramKey";
+                    connection.Execute(query, new { Hidden = program.Hidden, ProgramKey = program.ProgramKey });
+                }
             }
+        }
 
-            private void textBox1_TextChanged(object sender, EventArgs e) => ApplySearchFilter();
+
+        private void textBox1_TextChanged(object sender, EventArgs e) => ApplySearchFilter();
 
             private void tabPage1_Click(object sender, EventArgs e) { }
             private void tabPage2_Click(object sender, EventArgs e) { }
