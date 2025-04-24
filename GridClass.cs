@@ -24,6 +24,6 @@ namespace WPT_Updater
         public int? CheckBetas { get; set; }
 
         // hidden flag from the database
-        public int? Hidden { get; set; }    
+        //public int? Hidden { get; set; }    
     }
 }

@@ -92,7 +92,7 @@
             if (dataGridViewInstalled.Columns["CheckBetas"] != null)
             {
                 dataGridViewInstalled.Columns["CheckBetas"].HeaderText = "Check Betas";
-                dataGridViewInstalled.Columns["CheckBetas"].ReadOnly = true;
+                dataGridViewInstalled.Columns["CheckBetas"].ReadOnly = false;
             }
 
             if (dataGridViewUpdates.Columns["CheckBetas"] != null)
@@ -120,44 +120,13 @@
 
 
 
-        private async void Hidden_Apps_Click(object sender, EventArgs e)
-        {
-            // Reverse the Hidden flag for all programs in the list
-            foreach (var program in allPrograms)
-            {
-                program.Hidden = program.Hidden == 1 ? 0 : 1;
-            }
-
-            // Update the Hidden status in the database for all programs
-            await UpdateHiddenStatusInDatabase(allPrograms);
-
-            // Refresh DataGridViews to reflect the changes
-            LoadGridData();
-        }
+        
 
 
 
 
 
-        private async Task UpdateHiddenStatusInDatabase(List<GridClass> programsList)
-        {
-            string connectionString = "Data Source=Programs.db";
-
-            using (var connection = new SQLiteConnection(connectionString))
-            {
-                await connection.OpenAsync();
-
-                foreach (var program in programsList)
-                {
-                    // Update the Hidden column in the database for each program
-                    string updateQuery = "UPDATE Programs SET Hidden = @Hidden WHERE ProgramKey = @ProgramKey";
-                    await connection.ExecuteAsync(updateQuery, new { Hidden = program.Hidden, ProgramKey = program.ProgramKey });
-                }
-            }
-
-            Log.WriteLine("Hidden column updated successfully.");
-        }
-
+        
 
         private void LoadUpdatesGridData()
             {
@@ -302,9 +271,28 @@
 
                 // Clear existing context menu items
                 contextMenuStripInstalled.Items.Clear();
+                
+                var program = ProgramsClass.dbhelper.GetProgram(gridProgram.ProgramKey);
+                if (program == null)
+                    return;
 
                 // Add "Check for Updates"
                 contextMenuStripInstalled.Items.Add("Check for Updates");
+
+                // Add "Remove Program"
+                contextMenuStripInstalled.Items.Add("Remove Program", null, (s, ev) =>
+                {
+                    if (contextMenuStripInstalled.Tag is GridClass programToRemove)
+                    {
+                        program.RemoveProgram();
+
+                        // Reload the grid after deletion
+                        dataGridViewInstalled.DataSource = ProgramsClass.dbhelper
+                            .GetAllPrograms()
+                            .Where(p => p.Hidden == 0)
+                            .ToList();
+                    }
+                });
 
                 // Add "Hide Row"
                 contextMenuStripInstalled.Items.Add("Hide Row", null, (s, ev) =>
@@ -326,6 +314,7 @@
                 contextMenuStripInstalled.Show(Cursor.Position);
             }
         }
+
 
 
 
@@ -401,29 +390,7 @@
         }
 
 
-        private void HideRow_Click(object sender, EventArgs e)
-        {
-            if (dataGridViewInstalled.SelectedRows.Count > 0)
-            {
-                var row = dataGridViewInstalled.SelectedRows[0];
-                var program = row.DataBoundItem as GridClass;
-
-                if (program != null)
-                {
-                    // Set Hidden column to 1 (hide the app)
-                    program.Hidden = 1;
-
-                    using (var connection = new SQLiteConnection("Data Source=Programs.db"))
-                    {
-                        connection.Open();
-                        connection.Execute("UPDATE Programs SET Hidden = 1 WHERE ProgramKey = @ProgramKey", new { ProgramKey = program.ProgramKey });
-                    }
-
-                    // Reload the grid to reflect the updated hidden state
-                    LoadGridData();
-                }
-            }
-        }    
+        
         private void LoadInstalledTab()
         {
             var allPrograms = ProgramsClass.dbhelper.GetAllPrograms();
@@ -579,19 +546,7 @@
                 // Right-click on headers handled here (existing code remains unchanged)
             }
 
-        private void UpdateHiddenStatusInDatabase()
-        {
-            string connectionString = "Data Source=Programs.db";
-            using (var connection = new SQLiteConnection(connectionString))
-            {
-                connection.Open();
-                foreach (var program in allPrograms)
-                {
-                    var query = "UPDATE Programs SET Hidden = @Hidden WHERE ProgramKey = @ProgramKey";
-                    connection.Execute(query, new { Hidden = program.Hidden, ProgramKey = program.ProgramKey });
-                }
-            }
-        }
+        
 
 
         private void textBox1_TextChanged(object sender, EventArgs e) => ApplySearchFilter();

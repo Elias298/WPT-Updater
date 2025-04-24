@@ -32,7 +32,6 @@
             button1 = new Button();
             kebabMenuStrip = new ContextMenuStrip(components);
             Scan_New_Apps = new ToolStripMenuItem();
-            Hidden_Apps = new ToolStripMenuItem();
             Select_account = new ToolStripMenuItem();
             Download_Path = new ToolStripMenuItem();
             Check_For_Updates = new ToolStripMenuItem();
@@ -68,39 +67,33 @@
             // 
             // kebabMenuStrip
             // 
-            kebabMenuStrip.Items.AddRange(new ToolStripItem[] { Scan_New_Apps, Hidden_Apps, Select_account, Download_Path, Check_For_Updates });
+            kebabMenuStrip.Items.AddRange(new ToolStripItem[] { Scan_New_Apps, Select_account, Download_Path, Check_For_Updates });
             kebabMenuStrip.Name = "kebabMenuStrip";
-            kebabMenuStrip.Size = new Size(174, 114);
+            kebabMenuStrip.Size = new Size(181, 114);
             kebabMenuStrip.Opening += kebabMenuStrip_Opening;
             // 
             // Scan_New_Apps
             // 
             Scan_New_Apps.Name = "Scan_New_Apps";
-            Scan_New_Apps.Size = new Size(173, 22);
+            Scan_New_Apps.Size = new Size(180, 22);
             Scan_New_Apps.Text = "Scan for new Apps";
-            // 
-            // Hidden_Apps
-            // 
-            Hidden_Apps.Name = "Hidden_Apps";
-            Hidden_Apps.Size = new Size(173, 22);
-            Hidden_Apps.Text = "Hidden apps";
             // 
             // Select_account
             // 
             Select_account.Name = "Select_account";
-            Select_account.Size = new Size(173, 22);
+            Select_account.Size = new Size(180, 22);
             Select_account.Text = "Select Account";
             // 
             // Download_Path
             // 
             Download_Path.Name = "Download_Path";
-            Download_Path.Size = new Size(173, 22);
+            Download_Path.Size = new Size(180, 22);
             Download_Path.Text = "Download Path";
             // 
             // Check_For_Updates
             // 
             Check_For_Updates.Name = "Check_For_Updates";
-            Check_For_Updates.Size = new Size(173, 22);
+            Check_For_Updates.Size = new Size(180, 22);
             Check_For_Updates.Text = "Check For Updates";
             // 
             // panel1
@@ -222,7 +215,6 @@
         private Panel panel1;
         private ContextMenuStrip kebabMenuStrip;
         private ToolStripMenuItem Scan_New_Apps;
-        private ToolStripMenuItem Hidden_Apps;
         private ToolStripMenuItem Select_account;
         private ToolStripMenuItem Download_Path;
         private TextBox textBox1;
