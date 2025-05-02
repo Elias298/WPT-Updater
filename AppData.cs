@@ -12,7 +12,7 @@ namespace WPT_Updater;
 
 internal class AppData
 {
-    public static string DbPath = Installer.DownloadPath+"\\Programs.db";
+    public static string DbPath = Installer.DownloadPath + "\\Programs.db";
     private readonly string connectionString = $"Data Source={DbPath}";
     public readonly string selectQuery = "SELECT * FROM Programs;";
 
@@ -136,8 +136,7 @@ internal class AppData
         Log.WriteLine("Retreiving programs from database");
         using (var connection = new SQLiteConnection(connectionString))
         {
-            //connection.Open();
-            // Execute the query and map the results to a list of ProgramsClass objects
+
             var programsList = connection
                 .Query<ProgramsClass>(selectQuery)
                 .ToList();
@@ -146,5 +145,36 @@ internal class AppData
         }
     }
 
+    public ProgramsClass GetProgram(string Key)
+    {
+        using (var connection = new SQLiteConnection(connectionString))
+        {
+            string sql = "SELECT * FROM Programs WHERE ProgramKey = @ProgramKey";
+            ProgramsClass? program = connection.QueryFirstOrDefault<ProgramsClass>(sql, new { ProgramKey = Key });
+            if (program == null)
+            {
+                return program = new ProgramsClass()
+                {
+                    ProgramKey = "",
+                    ProgramName = "",
+                    InstalledVersion = "0.0",
+                    InstallDate = "--/--/----",
+                    Hidden = 0,
+                    CheckBetas = 0
+                };
+            }
+            return program;
+
+        }
+
+    }
+    public async Task EditCell(string row, string column, string text)
+    {
+        using (var connection = new SQLiteConnection(connectionString))
+        {
+            var query = $"UPDATE Programs SET {column} = @Value WHERE ProgramKey = @ProgramKey";
+            await connection.ExecuteAsync(query, new { Value = text, ProgramKey = row });
+        }
+    }
 
 }
